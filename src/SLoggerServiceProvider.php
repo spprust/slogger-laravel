@@ -17,6 +17,7 @@ class SLoggerServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->app->singleton(SLoggerState::class);
         $this->app->singleton(SLoggerProcessor::class);
         $this->app->singleton(SLoggerTraceIdContainer::class);
         $this->app->singleton(SLoggerHttpMiddleware::class);
@@ -63,6 +64,8 @@ class SLoggerServiceProvider extends ServiceProvider
             return;
         }
 
+        $state = $this->app->make(SLoggerState::class);
+
         /** @var array[] $watcherConfigs */
         $watcherConfigs = $this->app['config']['slogger.watchers'];
 
@@ -71,8 +74,12 @@ class SLoggerServiceProvider extends ServiceProvider
                 continue;
             }
 
+            $watcherClass = $watcherConfig['class'];
+
+            $state->addEnabledWatcher($watcherClass);
+
             /** @var AbstractSLoggerWatcher $watcher */
-            $watcher = $this->app->make($watcherConfig['class']);
+            $watcher = $this->app->make($watcherClass);
 
             $watcher->register();
         }

@@ -7,7 +7,6 @@ use Illuminate\Auth\Access\Response;
 use Illuminate\Database\Eloquent\Model;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
-use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 
 /**
@@ -27,14 +26,10 @@ class SLoggerGateWatcher extends AbstractSLoggerWatcher
 
     protected function onHandleGateEvaluated(GateEvaluated $event): void
     {
-        $caller = SLoggerTraceHelper::getCallerFromStackTrace([0, 1]);
-
         $data = [
             'ability'   => $event->ability,
             'result'    => $this->prepareResult($event->result),
             'arguments' => $this->prepareArguments($event->arguments),
-            'file'      => $caller['file'] ?? null,
-            'line'      => $caller['line'] ?? null,
         ];
 
         $this->processor->push(

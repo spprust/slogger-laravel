@@ -3,10 +3,10 @@
 namespace SLoggerLaravel\Watchers\Services;
 
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Str;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
-use Throwable;
 
 class SLoggerDatabaseWatcher extends AbstractSLoggerWatcher
 {
@@ -22,14 +22,10 @@ class SLoggerDatabaseWatcher extends AbstractSLoggerWatcher
 
     protected function onHandleQueryExecuted(QueryExecuted $event): void
     {
-        $caller = SLoggerTraceHelper::getCallerFromStackTrace();
-
         $data = [
             'connection' => $event->connectionName,
             'bindings'   => $event->bindings,
             'sql'        => $event->sql,
-            'file'       => $caller['file'] ?? '?',
-            'line'       => $caller['line'] ?? '?',
             'hash'       => md5($event->sql),
         ];
 
@@ -37,6 +33,7 @@ class SLoggerDatabaseWatcher extends AbstractSLoggerWatcher
             type: SLoggerTraceTypeEnum::Database->value,
             tags: [
                 $event->connectionName,
+                Str::substr($event->sql, 0, 40),
             ],
             data: $data,
             duration: SLoggerTraceHelper::roundDuration($event->time / 1000)

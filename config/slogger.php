@@ -97,7 +97,7 @@ return [
         ],
         [
             'class'   => SLoggerHttpClientWatcher::class,
-            'enabled' => env('SLOGGER_LOG_DUMP_ENABLED', false),
+            'enabled' => env('SLOGGER_LOG_HTTP_ENABLED', false),
         ],
     ],
 ];

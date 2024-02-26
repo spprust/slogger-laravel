@@ -25,18 +25,31 @@ class SLoggerTraceHelper
         return round($duration, 6);
     }
 
-    public static function getCallerFromStackTrace(array $keys = [0]): array
+    public static function injectCallerToData(array &$data): void
     {
-        $trace = collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS))->forget($keys);
+        $caller = self::getCallerFromStackTrace();
+
+        $data['__caller'] = [
+            'file' => $caller['file'] ?? '?',
+            'line' => $caller['line'] ?? '?',
+        ];
+    }
+
+    private static function getCallerFromStackTrace(): array
+    {
+        $trace = collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS))->forget([0]);
+
+        $basePathVendor   = base_path('vendor' . DIRECTORY_SEPARATOR);
+        $basePathPackages = base_path('packages' . DIRECTORY_SEPARATOR);
 
         return $trace->first(
-            function ($frame) {
+            function ($frame) use ($basePathVendor, $basePathPackages) {
                 if (!isset($frame['file'])) {
                     return false;
                 }
 
-                 return !Str::contains($frame['file'], base_path('vendor' . DIRECTORY_SEPARATOR))
-                    && !Str::contains($frame['file'], base_path('packages' . DIRECTORY_SEPARATOR));
+                return !Str::startsWith($frame['file'], $basePathVendor)
+                    && !Str::startsWith($frame['file'], $basePathPackages);
             }
         ) ?? [];
     }

@@ -64,7 +64,7 @@ class SLoggerCommandWatcher extends AbstractSLoggerWatcher
 
         $data = [
             'command'   => $this->makeCommandView($event->command, $event->input),
-            'exitCode'  => $event->exitCode,
+            'exit_code' => $event->exitCode,
             'arguments' => $event->input->getArguments(),
             'options'   => $event->input->getOptions(),
         ];

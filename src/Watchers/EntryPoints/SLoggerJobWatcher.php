@@ -40,7 +40,7 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
     {
         $payload = $event->job->payload();
 
-        $jobClass = $payload['job'] ?? null;
+        $jobClass = $payload['displayName'] ?? null;
 
         if (in_array($jobClass, $this->getExceptedJobs())) {
             return;
@@ -103,9 +103,9 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
         $startedAt = $jobData['started_at'];
 
         $data = [
-            'connectionName' => $event->connectionName,
-            'payload'        => $event->job->payload(),
-            'status'         => 'processed',
+            'connection_name' => $event->connectionName,
+            'payload'         => $event->job->payload(),
+            'status'          => 'processed',
         ];
 
         $this->processor->stop(

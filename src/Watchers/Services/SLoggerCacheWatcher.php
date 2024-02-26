@@ -38,6 +38,7 @@ class SLoggerCacheWatcher extends AbstractSLoggerWatcher
             'type'  => 'hit',
             'key'   => $event->key,
             'value' => $this->prepareValue($event->key, $event->value),
+            'tags'  => $event->tags,
         ];
 
         $this->processor->push(
@@ -60,6 +61,7 @@ class SLoggerCacheWatcher extends AbstractSLoggerWatcher
         $data = [
             'type' => 'missed',
             'key'  => $event->key,
+            'tags' => $event->tags,
         ];
 
         $this->processor->push(
@@ -83,6 +85,7 @@ class SLoggerCacheWatcher extends AbstractSLoggerWatcher
             'type'       => 'set',
             'key'        => $event->key,
             'value'      => $this->prepareValue($event->key, $event->value),
+            'tags'       => $event->tags,
             'expiration' => $event->seconds,
         ];
 

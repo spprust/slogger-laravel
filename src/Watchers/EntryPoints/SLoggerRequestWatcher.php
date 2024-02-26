@@ -11,7 +11,6 @@ use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Events\SLoggerRequestHandling;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Middleware\SLoggerHttpMiddleware;
-use SLoggerLaravel\Objects\SLoggerTraceUpdateObject;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -61,37 +60,34 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         $traceId = $requestData['trace_id'];
 
-        $requestStartedAt = $this->app[Kernel::class]->requestStartedAt();
+        $startedAt = $this->app[Kernel::class]->requestStartedAt();
 
         $request  = $event->request;
         $response = $event->response;
 
         $data = [
-            'ipAddress'      => $request->ip(),
+            'ip_address'      => $request->ip(),
             'uri'             => str_replace($request->root(), '', $request->fullUrl()) ?: '/',
             'method'          => $request->method(),
             'action'          => optional($request->route())->getActionName(),
             'middlewares'     => array_values(optional($request->route())->gatherMiddleware() ?? []),
             'headers'         => $this->prepareHeaders($request, $request->headers->all()),
             'payload'         => $this->preparePayload($request, $this->getInput($request)),
-            'responseStatus' => $response->getStatusCode(),
+            'response_status' => $response->getStatusCode(),
             'response'        => $this->prepareResponse($request, $response),
-            'duration'        => SLoggerTraceHelper::calcDuration($requestStartedAt),
-            'memory'          => round(memory_get_peak_usage(true) / 1024 / 1024, 1),
             ...$this->getAdditionalData(),
         ];
 
         $this->processor->stop(
-            new SLoggerTraceUpdateObject(
-                traceId: $traceId,
-                data: $data,
-            )
+            traceId: $traceId,
+            data: $data,
+            duration: SLoggerTraceHelper::calcDuration($startedAt)
         );
     }
 
     protected function getRequestView(Request $request): string
     {
-        return $request->getPathInfo();
+        return $request->route()->uri();
     }
 
     protected function getAdditionalData(): array

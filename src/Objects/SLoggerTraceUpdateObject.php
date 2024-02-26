@@ -11,6 +11,9 @@ class SLoggerTraceUpdateObject
         public ?SLoggerProfilingObjects $profiling = null,
         public ?array $tags = null,
         public ?array $data = null,
+        public ?float $duration = null,
+        public ?float $memory = null,
+        public ?float $cpu = null,
     ) {
     }
 }

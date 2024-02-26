@@ -35,7 +35,8 @@ class SLoggerTraceHelper
                     return false;
                 }
 
-                return !Str::contains($frame['file'], base_path('vendor' . DIRECTORY_SEPARATOR));
+                 return !Str::contains($frame['file'], base_path('vendor' . DIRECTORY_SEPARATOR))
+                    && !Str::contains($frame['file'], base_path('packages' . DIRECTORY_SEPARATOR));
             }
         ) ?? [];
     }

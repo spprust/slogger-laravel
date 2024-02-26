@@ -12,6 +12,9 @@ class SLoggerTraceObject
         public string $type,
         public array $tags,
         public array $data,
+        public ?float $duration,
+        public ?float $memory,
+        public ?float $cpu,
         public Carbon $loggedAt
     ) {
     }

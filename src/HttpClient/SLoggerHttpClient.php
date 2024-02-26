@@ -28,6 +28,9 @@ class SLoggerHttpClient
                 'type'            => $traceObject->type,
                 'tags'            => $traceObject->tags,
                 'data'            => json_encode($traceObject->data),
+                'duration'        => $traceObject->duration,
+                'memory'          => $traceObject->memory,
+                'cpu'             => $traceObject->cpu,
                 'logged_at'       => (float) ($traceObject->loggedAt->unix()
                     . '.' . $traceObject->loggedAt->microsecond),
             ];
@@ -59,6 +62,15 @@ class SLoggerHttpClient
                 ...(is_null($traceObject->data)
                     ? []
                     : ['data' => json_encode($traceObject->data)]),
+                ...(is_null($traceObject->duration)
+                    ? []
+                    : ['duration' => $traceObject->duration]),
+                ...(is_null($traceObject->memory)
+                    ? []
+                    : ['memory' => $traceObject->memory]),
+                ...(is_null($traceObject->cpu)
+                    ? []
+                    : ['cpu' => $traceObject->cpu]),
             ];
         }
 

@@ -125,7 +125,7 @@ class SLoggerProcessor
     ): string {
         $this->profiling->start();
 
-        $traceId = SLoggerTraceHelper::make();
+        $traceId = SLoggerTraceHelper::makeTraceId();
 
         $parentTraceId = $this->traceIdContainer->getParentTraceId();
 
@@ -163,7 +163,7 @@ class SLoggerProcessor
             return;
         }
 
-        $traceId = SLoggerTraceHelper::make();
+        $traceId = SLoggerTraceHelper::makeTraceId();
 
         $parentTraceId = $this->traceIdContainer->getParentTraceId();
 

@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 
 class SLoggerTraceHelper
 {
-    public static function make(): string
+    public static function makeTraceId(): string
     {
         return Str::slug(config('app.name')) . '-' . Str::uuid()->toString();
     }

@@ -3,11 +3,22 @@
 namespace SLoggerLaravel\Listeners;
 
 use SLoggerLaravel\Events\SLoggerWatcherErrorEvent;
+use SLoggerLaravel\SLoggerProcessor;
+use Throwable;
 
-class SLoggerWatcherErrorListener
+readonly class SLoggerWatcherErrorListener
 {
+    public function __construct(private SLoggerProcessor $loggerProcessor)
+    {
+    }
+
+    /**
+     * @throws Throwable
+     */
     public function handle(SLoggerWatcherErrorEvent $event): void
     {
-        report($event->exception);
+        $this->loggerProcessor->handleWithoutTracing(
+            fn() => report($event->exception)
+        );
     }
 }

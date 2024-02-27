@@ -64,7 +64,7 @@ class SLoggerServiceProvider extends ServiceProvider
     {
         $events = $this->app['events'];
 
-        foreach ($this->app['config']['slogger.listeners'] as $eventClass => $listenerClasses) {
+        foreach ($this->app['config']['slogger.listeners'] ?? [] as $eventClass => $listenerClasses) {
             foreach ($listenerClasses as $listenerClass) {
                 $events->listen($eventClass, $listenerClass);
             }
@@ -80,7 +80,7 @@ class SLoggerServiceProvider extends ServiceProvider
         $state = $this->app->make(SLoggerState::class);
 
         /** @var array[] $watcherConfigs */
-        $watcherConfigs = $this->app['config']['slogger.watchers'];
+        $watcherConfigs = $this->app['config']['slogger.watchers'] ?? [];
 
         foreach ($watcherConfigs as $watcherConfig) {
             if (!$watcherConfig['enabled']) {

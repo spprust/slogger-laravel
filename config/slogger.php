@@ -35,12 +35,13 @@ return [
         ],
     ],
 
-    'jobs'        => [
+    'jobs' => [
         'excepted' => [
             SLoggerTraceCreateJob::class,
             SLoggerTraceUpdateJob::class,
         ],
     ],
+
     'http_client' => [
         'url'   => env('SLOGGER_HTTP_CLIENT_URL'),
         'token' => env('SLOGGER_HTTP_CLIENT_TOKEN'),

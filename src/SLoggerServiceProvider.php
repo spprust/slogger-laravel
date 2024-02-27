@@ -46,6 +46,8 @@ class SLoggerServiceProvider extends ServiceProvider
             );
         });
 
+        $this->registerListeners();
+
         $this->registerWatchers();
 
         $this->publishes(
@@ -56,6 +58,17 @@ class SLoggerServiceProvider extends ServiceProvider
                 'slogger-laravel',
             ]
         );
+    }
+
+    private function registerListeners(): void
+    {
+        $events = $this->app['events'];
+
+        foreach ($this->app['config']['slogger.listeners'] as $eventClass => $listenerClasses) {
+            foreach ($listenerClasses as $listenerClass) {
+                $events->listen($eventClass, $listenerClass);
+            }
+        }
     }
 
     private function registerWatchers(): void

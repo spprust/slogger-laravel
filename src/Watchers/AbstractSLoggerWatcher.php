@@ -4,6 +4,7 @@ namespace SLoggerLaravel\Watchers;
 
 use Closure;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Events\Dispatcher;
 use SLoggerLaravel\Dispatcher\SLoggerTraceDispatcherInterface;
 use SLoggerLaravel\Events\SLoggerWatcherErrorEvent;
 use SLoggerLaravel\SLoggerProcessor;
@@ -12,6 +13,8 @@ use Throwable;
 
 abstract class AbstractSLoggerWatcher
 {
+    private Dispatcher $events;
+
     abstract public function register(): void;
 
     public function __construct(
@@ -20,11 +23,12 @@ abstract class AbstractSLoggerWatcher
         protected readonly SLoggerProcessor $processor,
         protected readonly SLoggerTraceIdContainer $traceIdContainer
     ) {
+        $this->events = $this->app['events'];
     }
 
     protected function listenEvent(string $eventClass, array $function): void
     {
-        $this->app['events']->listen($eventClass, $function);
+        $this->events->listen($eventClass, $function);
     }
 
     protected function safeHandleWatching(Closure $callback): void

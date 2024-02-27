@@ -28,7 +28,7 @@ class SLoggerMailWatcher extends AbstractSLoggerWatcher
             'mailable' => $this->getMailable($event),
             'queued'   => $this->getQueuedStatus($event),
             'from'     => $this->formatAddresses($event->message->getFrom()),
-            'replyTo'  => $this->formatAddresses($event->message->getReplyTo()),
+            'reply_to' => $this->formatAddresses($event->message->getReplyTo()),
             'to'       => $this->formatAddresses($event->message->getTo()),
             'cc'       => $this->formatAddresses($event->message->getCc()),
             'bcc'      => $this->formatAddresses($event->message->getBcc()),

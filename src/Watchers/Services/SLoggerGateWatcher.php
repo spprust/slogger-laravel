@@ -26,14 +26,19 @@ class SLoggerGateWatcher extends AbstractSLoggerWatcher
 
     protected function onHandleGateEvaluated(GateEvaluated $event): void
     {
+        $result = $this->prepareResult($event->result);
+
         $data = [
             'ability'   => $event->ability,
-            'result'    => $this->prepareResult($event->result),
+            'result'    => $result,
             'arguments' => $this->prepareArguments($event->arguments),
         ];
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Gate->value,
+            tags: [
+                $result,
+            ],
             data: $data
         );
     }

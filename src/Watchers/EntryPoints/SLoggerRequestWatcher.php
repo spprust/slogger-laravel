@@ -39,7 +39,9 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         $traceId = $this->processor->startAndGetTraceId(
             type: SLoggerTraceTypeEnum::Request->value,
-            tags: [$this->getRequestView($event->request)],
+            tags: [
+                $this->getRequestView($event->request),
+            ],
             customParentTraceId: $parentTraceId
         );
 
@@ -90,7 +92,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
     protected function getRequestView(Request $request): string
     {
-        return $request->route()->uri();
+        return $request->getPathInfo();
     }
 
     protected function getAdditionalData(): array

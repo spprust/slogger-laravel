@@ -30,8 +30,10 @@ class SLoggerModelWatcher extends AbstractSLoggerWatcher
 
         $modelClass = $modelInstance::class;
 
+        $action = $this->getAction($eventName);
+
         $data = [
-            'action'  => $this->getAction($eventName),
+            'action'  => $action,
             'model'   => $modelClass,
             'key'     => $modelInstance->getKey(),
             'changes' => $this->prepareChanges($modelInstance),
@@ -39,6 +41,9 @@ class SLoggerModelWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Model->value,
+            tags: [
+                $action,
+            ],
             data: $data
         );
     }

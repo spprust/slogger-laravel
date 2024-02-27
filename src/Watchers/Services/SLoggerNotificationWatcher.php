@@ -27,8 +27,10 @@ class SLoggerNotificationWatcher extends AbstractSLoggerWatcher
 
     protected function onHandleNotification(NotificationSent $event): void
     {
+        $notification = get_class($event->notification);
+
         $data = [
-            'notification' => get_class($event->notification),
+            'notification' => $notification,
             'queued'       => in_array(ShouldQueue::class, class_implements($event->notification)),
             'notifiable'   => $this->formatNotifiable($event->notifiable),
             'channel'      => $event->channel,
@@ -37,6 +39,9 @@ class SLoggerNotificationWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Notification->value,
+            tags: [
+                $notification,
+            ],
             data: $data
         );
     }

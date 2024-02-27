@@ -20,9 +20,7 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
 
         Http::globalRequestMiddleware(
             function (RequestInterface $request) {
-                $this->handleRequest($request);
-
-                return $request;
+                return $this->handleRequest($request);
             }
         );
 
@@ -35,16 +33,16 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
         );
     }
 
-    public function handleRequest(RequestInterface $request): void
+    public function handleRequest(RequestInterface $request): RequestInterface
     {
         if (!$this->isSubscribeRequest($request)) {
-            return;
+            return $request;
         }
 
         $headerKey = $this->app['config']['slogger.requests.header_parent_trace_id_key'];
 
         if ($headerKey) {
-            $request->withHeader($headerKey, $this->traceIdContainer->getParentTraceId());
+            $request = $request->withHeader($headerKey, $this->traceIdContainer->getParentTraceId());
         }
 
         $uri = (string) $request->getUri();
@@ -61,6 +59,8 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
                 'payload' => $this->getRequestPayload($request),
             ]
         );
+
+        return $request;
     }
 
     public function handleResponse(ResponseInterface $response): void

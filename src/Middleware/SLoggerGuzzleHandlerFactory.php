@@ -32,9 +32,7 @@ readonly class SLoggerGuzzleHandlerFactory
     private function request(): callable
     {
         return Middleware::mapRequest(function (RequestInterface $request) {
-            $this->httpClientWatcher->handleRequest($request);
-
-            return $request;
+            return $this->httpClientWatcher->handleRequest($request);
         });
     }
 

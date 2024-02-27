@@ -12,7 +12,7 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
 {
     public function register(): void
     {
-        if ((float) $this->app->version() < 10) {
+        if ((float) $this->app->version() < 10.14) {
             /** @see SLoggerGuzzleHandlerFactory */
 
             return;

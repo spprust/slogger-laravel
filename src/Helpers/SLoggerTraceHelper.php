@@ -29,6 +29,12 @@ class SLoggerTraceHelper
     {
         $caller = self::getCallerFromStackTrace();
 
+        if ($caller['file'] ?? null) {
+            $basePathLen = strlen(base_path());
+
+            $caller['file'] = Str::substr($caller['file'], $basePathLen);
+        }
+
         $data['__caller'] = [
             'file' => $caller['file'] ?? '?',
             'line' => $caller['line'] ?? '?',
@@ -44,7 +50,7 @@ class SLoggerTraceHelper
 
         return $trace->first(
             function ($frame) use ($basePathVendor, $basePathPackages) {
-                if (!isset($frame['file'])) {
+                if (!isset($frame['file']) || !isset($frame['line'])) {
                     return false;
                 }
 

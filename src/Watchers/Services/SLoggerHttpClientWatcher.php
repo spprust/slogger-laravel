@@ -2,92 +2,164 @@
 
 namespace SLoggerLaravel\Watchers\Services;
 
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use SLoggerLaravel\Helpers\SLoggerDataFormatter;
+use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
+use Throwable;
 
 class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
 {
-    public function register(): void
+    protected ?string $headerTraceIdKey;
+    protected ?string $headerParentTraceIdKey;
+
+    protected array $requests = [];
+
+    protected function init(): void
     {
-        if ((float) $this->app->version() < 10.14) {
-            /** @see SLoggerGuzzleHandlerFactory */
-
-            return;
-        }
-
-        Http::globalRequestMiddleware(
-            function (RequestInterface $request) {
-                return $this->handleRequest($request);
-            }
-        );
-
-        Http::globalResponseMiddleware(
-            function (ResponseInterface $response) {
-                $this->handleResponse($response);
-
-                return $response;
-            }
-        );
+        $this->headerTraceIdKey       = Str::random(20);
+        $this->headerParentTraceIdKey = $this->app['config']['slogger.requests.header_parent_trace_id_key'];
     }
 
-    public function handleRequest(RequestInterface $request): RequestInterface
+    public function register(): void
+    {
+        /** @see SLoggerGuzzleHandlerFactory */
+    }
+
+    final public function handleRequest(RequestInterface $request): RequestInterface
+    {
+        $requestResult = $this->safeHandleWatching(
+            function () use ($request) {
+                return $this->onHandleRequest($request);
+            }
+        );
+
+        return $requestResult ?: $request;
+    }
+
+    protected function onHandleRequest(RequestInterface $request): RequestInterface
     {
         if (!$this->isSubscribeRequest($request)) {
             return $request;
         }
 
-        $headerKey = $this->app['config']['slogger.requests.header_parent_trace_id_key'];
-
-        if ($headerKey) {
-            $request = $request->withHeader($headerKey, $this->traceIdContainer->getParentTraceId());
-        }
-
-        $uri = (string) $request->getUri();
-
-        $this->processor->push(
-            type: 'http-request',
-            tags: [
-                $uri,
-            ],
-            data: [
-                'method' => $request->getMethod(),
-                'uri' => $uri,
-                'headers' => $this->getRequestHeaders($request),
-                'payload' => $this->getRequestPayload($request),
-            ]
+        $traceId = $this->processor->startAndGetTraceId(
+            type: 'http-request'
         );
+
+        $this->requests[$traceId] = [
+            'trace_id'   => $traceId,
+            'started_at' => now(),
+        ];
+
+        $request = $request->withHeader($this->headerTraceIdKey, $traceId);
+
+        if ($this->headerParentTraceIdKey) {
+            $request = $request->withHeader(
+                $this->headerParentTraceIdKey,
+                $this->traceIdContainer->getParentTraceId()
+            );
+        }
 
         return $request;
     }
 
-    public function handleResponse(ResponseInterface $response): void
+    final public function handleResponse(RequestInterface $request, array $options, ResponseInterface $response): void
     {
-        if (!$this->isSubscribeResponse($response)) {
+        $this->safeHandleWatching(
+            function () use ($request, $options, $response) {
+                $this->onHandleResponse($request, $options, $response);
+            }
+        );
+    }
+
+    protected function onHandleResponse(RequestInterface $request, array $options, ResponseInterface $response): void
+    {
+        if (!$this->isSubscribeRequest($request)) {
             return;
         }
 
-        $url = $this->getResponseUrl($response);
+        $traceId = $request->getHeader($this->headerTraceIdKey)[0];
 
-        $this->processor->push(
-            type: 'http-response',
-            tags: $url ? [$url] : [],
+        $requestData = $this->requests[$traceId] ?? null;
+
+        if (!$requestData) {
+            return;
+        }
+
+        /** @var Carbon $startedAt */
+        $startedAt = $requestData['started_at'];
+
+        $uri = (string) $request->getUri();
+
+        $this->processor->stop(
+            traceId: $traceId,
+            tags: $uri ? [$uri] : [],
             data: [
-                'status_code' => $response->getStatusCode(),
-                'headers'     => $this->getResponseHeaders($response),
-                'body'        => $this->getResponseBody($response),
-            ]
+                'method'   => $request->getMethod(),
+                'uri'      => $uri,
+                'request'  => [
+                    'headers' => $this->getRequestHeaders($request),
+                    'payload' => $this->getRequestPayload($request),
+                ],
+                'response' => [
+                    'status_code' => $response->getStatusCode(),
+                    'headers'     => $this->getResponseHeaders($response),
+                    'body'        => $this->getResponseBody($response),
+                ],
+            ],
+            duration: SLoggerTraceHelper::calcDuration($startedAt)
+        );
+    }
+
+    final public function handleInvalidResponse(RequestInterface $request, Throwable $exception): void
+    {
+        $this->safeHandleWatching(
+            function () use ($request, $exception) {
+                $this->onHandleInvalidResponse($request, $exception);
+            }
+        );
+    }
+
+    protected function onHandleInvalidResponse(RequestInterface $request, Throwable $exception): void
+    {
+        if (!$this->isSubscribeRequest($request)) {
+            return;
+        }
+
+        $traceId = $request->getHeader($this->headerTraceIdKey)[0];
+
+        $requestData = $this->requests[$traceId] ?? null;
+
+        if (!$requestData) {
+            return;
+        }
+
+        /** @var Carbon $startedAt */
+        $startedAt = $requestData['started_at'];
+
+        $uri = (string) $request->getUri();
+
+        $this->processor->stop(
+            traceId: $traceId,
+            tags: $uri ? [$uri] : [],
+            data: [
+                'method'   => $request->getMethod(),
+                'uri'      => $uri,
+                'request'  => [
+                    'headers' => $this->getRequestHeaders($request),
+                    'payload' => $this->getRequestPayload($request),
+                ],
+                'exception' => SLoggerDataFormatter::exception($exception),
+            ],
+            duration: SLoggerTraceHelper::calcDuration($startedAt)
         );
     }
 
     protected function isSubscribeRequest(RequestInterface $request): bool
-    {
-        return true;
-    }
-
-    protected function isSubscribeResponse(ResponseInterface $response): bool
     {
         return true;
     }
@@ -122,33 +194,5 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
         $body->rewind();
 
         return $content;
-    }
-
-    protected function getResponseUrl(ResponseInterface $response): ?string
-    {
-        $headers = $response->getHeaders();
-
-        $location = Arr::get($headers, 'location') ?? Arr::get($headers, 'Location');
-
-        if (!$location) {
-            return null;
-        }
-
-        if (is_string($location)) {
-            return $location;
-        }
-
-        if (!is_array($location)) {
-            return null;
-        }
-
-        $location = $location[0] ?? null;
-
-
-        if (is_string($location)) {
-            return $location;
-        }
-
-        return null;
     }
 }

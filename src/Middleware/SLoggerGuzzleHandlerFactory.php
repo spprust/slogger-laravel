@@ -4,10 +4,12 @@ namespace SLoggerLaravel\Middleware;
 
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 use SLoggerLaravel\SLoggerState;
 use SLoggerLaravel\Watchers\Services\SLoggerHttpClientWatcher;
+use Throwable;
 
 readonly class SLoggerGuzzleHandlerFactory
 {
@@ -17,7 +19,7 @@ readonly class SLoggerGuzzleHandlerFactory
     ) {
     }
 
-    public function makeHandler(?HandlerStack $handlerStack = null): HandlerStack
+    public function prepareHandler(?HandlerStack $handlerStack = null): HandlerStack
     {
         $handlersStack = $handlerStack ?: HandlerStack::create();
 
@@ -31,17 +33,27 @@ readonly class SLoggerGuzzleHandlerFactory
 
     private function request(): callable
     {
-        return Middleware::mapRequest(function (RequestInterface $request) {
+        return Middleware::mapRequest(function (RequestInterface $request): RequestInterface {
             return $this->httpClientWatcher->handleRequest($request);
         });
     }
 
     private function response(): callable
     {
-        return Middleware::mapResponse(function (ResponseInterface $response) {
-            $this->httpClientWatcher->handleResponse($response);
+        return Middleware::tap(
+            after: function (RequestInterface $request, array $options, PromiseInterface $response): void {
+                /** @var Response $responseWaited */
 
-            return $response;
-        });
+                try {
+                    $responseWaited = $response->wait();
+                } catch (Throwable $exception) {
+                    $this->httpClientWatcher->handleInvalidResponse($request, $exception);
+
+                    return;
+                }
+
+                $this->httpClientWatcher->handleResponse($request, $options, $responseWaited);
+            }
+        );
     }
 }

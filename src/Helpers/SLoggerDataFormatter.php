@@ -27,7 +27,7 @@ class SLoggerDataFormatter
     /**
      * @see Throwable::getTrace()
      */
-    public static function stackTrace(array $stackTrace): array
+    private static function stackTrace(array $stackTrace): array
     {
         return array_map(
             fn(array $item) => Arr::only($item, ['file', 'line']),

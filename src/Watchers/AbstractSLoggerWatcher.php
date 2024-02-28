@@ -24,6 +24,12 @@ abstract class AbstractSLoggerWatcher
         protected readonly SLoggerTraceIdContainer $traceIdContainer
     ) {
         $this->events = $this->app['events'];
+
+        $this->init();
+    }
+
+    protected function init(): void
+    {
     }
 
     protected function listenEvent(string $eventClass, array $function): void
@@ -31,18 +37,20 @@ abstract class AbstractSLoggerWatcher
         $this->events->listen($eventClass, $function);
     }
 
-    protected function safeHandleWatching(Closure $callback): void
+    protected function safeHandleWatching(Closure $callback): mixed
     {
         if ($this->processor->isPaused()) {
-            return;
+            return null;
         }
 
         try {
-            $callback();
+            return $callback();
         } catch (Throwable $exception) {
             $this->processor->handleWithoutTracing(function () use ($exception) {
                 $this->app['events']->dispatch(new SLoggerWatcherErrorEvent($exception));
             });
         }
+
+        return null;
     }
 }

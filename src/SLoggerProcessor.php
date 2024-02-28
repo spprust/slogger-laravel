@@ -220,6 +220,8 @@ class SLoggerProcessor
             $this->traceIdContainer->setParentTraceId(null);
         }
 
+        SLoggerTraceHelper::injectCallerToData($data);
+
         $parameters = new SLoggerTraceUpdateObject(
             traceId: $traceId,
             profiling: $this->profiling->stop(),

@@ -45,6 +45,7 @@ class SLoggerModelWatcher extends AbstractSLoggerWatcher
             status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $action,
+                $modelClass,
             ],
             data: $data
         );

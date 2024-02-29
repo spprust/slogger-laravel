@@ -4,6 +4,7 @@ namespace SLoggerLaravel\Watchers\Services;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 
@@ -41,6 +42,7 @@ class SLoggerModelWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Model->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $action,
             ],

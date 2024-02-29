@@ -5,6 +5,7 @@ namespace SLoggerLaravel\Watchers\EntryPoints;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Support\Carbon;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
@@ -71,6 +72,9 @@ class SLoggerCommandWatcher extends AbstractSLoggerWatcher
 
         $this->processor->stop(
             traceId: $traceId,
+            status: $event->exitCode
+                ? SLoggerTraceStatusEnum::Failed->value
+                : SLoggerTraceStatusEnum::Success->value,
             data: $data,
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );

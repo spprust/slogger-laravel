@@ -4,6 +4,7 @@ namespace SLoggerLaravel\Watchers\Services;
 
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Str;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
@@ -31,6 +32,7 @@ class SLoggerDatabaseWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Database->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $event->connectionName,
                 Str::substr($event->sql, 0, 40),

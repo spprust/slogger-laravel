@@ -6,6 +6,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Notifications\Events\NotificationSent;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
@@ -39,6 +40,7 @@ class SLoggerNotificationWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Notification->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $notification,
             ],

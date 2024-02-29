@@ -8,6 +8,7 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Queue;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
@@ -110,6 +111,7 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
 
         $this->processor->stop(
             traceId: $traceId,
+            status: SLoggerTraceStatusEnum::Success->value,
             data: $data,
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );
@@ -152,6 +154,7 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
 
         $this->processor->stop(
             traceId: $traceId,
+            status: SLoggerTraceStatusEnum::Failed->value,
             data: $data,
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );

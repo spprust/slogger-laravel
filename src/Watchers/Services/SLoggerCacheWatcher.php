@@ -8,6 +8,7 @@ use Illuminate\Cache\Events\KeyForgotten;
 use Illuminate\Cache\Events\KeyWritten;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
@@ -45,6 +46,7 @@ class SLoggerCacheWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Cache->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $type,
                 $event->key,
@@ -74,6 +76,7 @@ class SLoggerCacheWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Cache->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $type,
                 $event->key,
@@ -105,6 +108,7 @@ class SLoggerCacheWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Cache->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $type,
                 $event->key,
@@ -133,6 +137,7 @@ class SLoggerCacheWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Cache->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $type,
                 $event->key,

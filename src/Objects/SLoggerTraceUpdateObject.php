@@ -8,6 +8,7 @@ class SLoggerTraceUpdateObject
 {
     public function __construct(
         public string $traceId,
+        public string $status,
         public ?SLoggerProfilingObjects $profiling = null,
         public ?array $tags = null,
         public ?array $data = null,

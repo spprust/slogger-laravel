@@ -3,6 +3,7 @@
 namespace SLoggerLaravel\Watchers\Services;
 
 use Illuminate\Mail\Events\MessageSent;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 use Symfony\Component\Mime\Address;
@@ -37,6 +38,7 @@ class SLoggerMailWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Mail->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             data: $data
         );
     }

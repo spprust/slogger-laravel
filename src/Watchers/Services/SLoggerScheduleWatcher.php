@@ -8,6 +8,7 @@ use Illuminate\Console\Events\ScheduledTaskSkipped;
 use Illuminate\Console\Events\ScheduledTaskStarting;
 use Illuminate\Console\Scheduling\CallbackEvent;
 use Illuminate\Console\Scheduling\Event;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 
@@ -62,6 +63,7 @@ class SLoggerScheduleWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Schedule->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $tag,
             ],

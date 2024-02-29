@@ -3,6 +3,7 @@
 namespace SLoggerLaravel\Watchers\Services;
 
 use Illuminate\Log\Events\MessageLogged;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
@@ -36,6 +37,7 @@ class SLoggerLogWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Log->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $event->level,
             ],

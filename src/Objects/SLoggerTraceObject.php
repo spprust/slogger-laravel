@@ -10,6 +10,7 @@ class SLoggerTraceObject
         public string $traceId,
         public ?string $parentTraceId,
         public string $type,
+        public string $status,
         public array $tags,
         public array $data,
         public ?float $duration,

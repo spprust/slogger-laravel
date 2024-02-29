@@ -6,6 +6,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
@@ -47,7 +48,7 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
         }
 
         $traceId = $this->processor->startAndGetTraceId(
-            type: 'http-request'
+            type: 'http-client'
         );
 
         $this->requests[$traceId] = [
@@ -95,8 +96,13 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
 
         $uri = (string) $request->getUri();
 
+        $statusCode = $response->getStatusCode();
+
         $this->processor->stop(
             traceId: $traceId,
+            status: ($statusCode >= 200 && $statusCode < 300)
+                ? SLoggerTraceStatusEnum::Success->value
+                : SLoggerTraceStatusEnum::Failed->value,
             tags: $uri ? [$uri] : [],
             data: [
                 'method'   => $request->getMethod(),
@@ -106,7 +112,7 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
                     'payload' => $this->getRequestPayload($request),
                 ],
                 'response' => [
-                    'status_code' => $response->getStatusCode(),
+                    'status_code' => $statusCode,
                     'headers'     => $this->getResponseHeaders($response),
                     'body'        => $this->getResponseBody($response),
                 ],
@@ -145,11 +151,12 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
 
         $this->processor->stop(
             traceId: $traceId,
+            status: SLoggerTraceStatusEnum::Failed->value,
             tags: $uri ? [$uri] : [],
             data: [
-                'method'   => $request->getMethod(),
-                'uri'      => $uri,
-                'request'  => [
+                'method'    => $request->getMethod(),
+                'uri'       => $uri,
+                'request'   => [
                     'headers' => $this->getRequestHeaders($request),
                     'payload' => $this->getRequestPayload($request),
                 ],

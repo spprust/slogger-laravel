@@ -7,6 +7,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Str;
 use ReflectionFunction;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 
@@ -40,6 +41,7 @@ class SLoggerEventWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Event->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             tags: [
                 $eventName,
             ],

@@ -7,6 +7,7 @@ use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as IlluminateResponse;
 use Illuminate\View\View;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Events\SLoggerRequestHandling;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
@@ -83,6 +84,9 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         $this->processor->stop(
             traceId: $traceId,
+            status: $response->isSuccessful()
+                ? SLoggerTraceStatusEnum::Success->value
+                : SLoggerTraceStatusEnum::Failed->value,
             data: $data,
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );

@@ -26,6 +26,7 @@ class SLoggerHttpClient
                 'trace_id'        => $traceObject->traceId,
                 'parent_trace_id' => $traceObject->parentTraceId,
                 'type'            => $traceObject->type,
+                'status'          => $traceObject->status,
                 'tags'            => $traceObject->tags,
                 'data'            => json_encode($traceObject->data),
                 'duration'        => $traceObject->duration,
@@ -53,6 +54,7 @@ class SLoggerHttpClient
         foreach ($traceObjects->get() as $traceObject) {
             $traces[] = [
                 'trace_id' => $traceObject->traceId,
+                'status'   => $traceObject->status,
                 ...(is_null($traceObject->profiling)
                     ? []
                     : ['profiling' => $this->prepareProfiling($traceObject->profiling)]),

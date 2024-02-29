@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Support\Carbon;
 use LogicException;
 use SLoggerLaravel\Dispatcher\SLoggerTraceDispatcherInterface;
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Helpers\SLoggerMetricsHelper;
@@ -81,7 +82,6 @@ class SLoggerProcessor
         $traceId = $this->startAndGetTraceId(
             type: $type,
             tags: $tags,
-            data: $data,
             loggedAt: $loggedAt,
             customParentTraceId: $customParentTraceId,
         );
@@ -95,16 +95,14 @@ class SLoggerProcessor
         } catch (Throwable $exception) {
             $result = null;
 
-            $this->push(
-                type: SLoggerTraceTypeEnum::Exception->value,
-                data: [
-                    'exception' => SLoggerDataFormatter::exception($exception),
-                ]
-            );
+            $data['exception'] = SLoggerDataFormatter::exception($exception);
         }
 
         $this->stop(
             traceId: $traceId,
+            status: $exception
+                ? SLoggerTraceStatusEnum::Failed->value
+                : SLoggerTraceStatusEnum::Success->value,
             data: $data,
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );
@@ -136,6 +134,7 @@ class SLoggerProcessor
                 traceId: $traceId,
                 parentTraceId: $customParentTraceId ?? $parentTraceId,
                 type: $type,
+                status: SLoggerTraceStatusEnum::Started->value,
                 tags: $tags,
                 data: $data,
                 duration: null,
@@ -156,6 +155,7 @@ class SLoggerProcessor
 
     public function push(
         string $type,
+        string $status,
         array $tags = [],
         array $data = [],
         ?float $duration = null,
@@ -180,6 +180,7 @@ class SLoggerProcessor
                 traceId: $traceId,
                 parentTraceId: $parentTraceId,
                 type: $type,
+                status: $status,
                 tags: $tags,
                 data: $data,
                 duration: $duration,
@@ -192,6 +193,7 @@ class SLoggerProcessor
 
     public function stop(
         string $traceId,
+        string $status,
         ?array $tags = null,
         ?array $data = null,
         ?float $duration = null,
@@ -224,6 +226,7 @@ class SLoggerProcessor
 
         $parameters = new SLoggerTraceUpdateObject(
             traceId: $traceId,
+            status: $status,
             profiling: $this->profiling->stop(),
             tags: $tags,
             data: $data,

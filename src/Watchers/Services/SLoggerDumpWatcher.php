@@ -2,6 +2,7 @@
 
 namespace SLoggerLaravel\Watchers\Services;
 
+use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 use Symfony\Component\VarDumper\VarDumper;
@@ -38,6 +39,7 @@ class SLoggerDumpWatcher extends AbstractSLoggerWatcher
 
         $this->processor->push(
             type: SLoggerTraceTypeEnum::Dump->value,
+            status: SLoggerTraceStatusEnum::Success->value,
             data: $data
         );
     }

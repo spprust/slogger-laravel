@@ -5,6 +5,7 @@ namespace SLoggerLaravel\Watchers\EntryPoints;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Events\JobReleasedAfterException;
 use Illuminate\Queue\Queue;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -30,6 +31,7 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
         $this->listenEvent(JobProcessing::class, [$this, 'handleJobProcessing']);
         $this->listenEvent(JobProcessed::class, [$this, 'handleJobProcessed']);
         $this->listenEvent(JobFailed::class, [$this, 'handleJobFailed']);
+        $this->listenEvent(JobReleasedAfterException::class, [$this, 'handleJobReleasedAfterException']);
     }
 
     public function handleJobProcessing(JobProcessing $event): void
@@ -150,6 +152,48 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
             'payload'        => $event->job->payload(),
             'status'         => 'failed',
             'exception'      => SLoggerDataFormatter::exception($event->exception),
+        ];
+
+        $this->processor->stop(
+            traceId: $traceId,
+            status: SLoggerTraceStatusEnum::Failed->value,
+            data: $data,
+            duration: SLoggerTraceHelper::calcDuration($startedAt)
+        );
+
+        unset($this->jobs[$uuid]);
+    }
+
+    public function handleJobReleasedAfterException(JobReleasedAfterException $event): void
+    {
+        $this->safeHandleWatching(fn() => $this->onHandleJobReleasedAfterException($event));
+    }
+
+    protected function onHandleJobReleasedAfterException(JobReleasedAfterException $event): void
+    {
+        $payload = $event->job->payload();
+
+        $uuid = $payload['slogger_uuid'] ?? null;
+
+        if (!$uuid) {
+            return;
+        }
+
+        $jobData = $this->jobs[$uuid] ?? null;
+
+        if (!$jobData) {
+            return;
+        }
+
+        $traceId = $jobData['trace_id'];
+
+        /** @var Carbon $startedAt */
+        $startedAt = $jobData['started_at'];
+
+        $data = [
+            'connectionName' => $event->connectionName,
+            'payload'        => $event->job->payload(),
+            'status'         => 'released_after_exception',
         ];
 
         $this->processor->stop(

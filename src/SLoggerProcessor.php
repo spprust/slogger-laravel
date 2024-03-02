@@ -7,7 +7,6 @@ use Illuminate\Support\Carbon;
 use LogicException;
 use SLoggerLaravel\Dispatcher\SLoggerTraceDispatcherInterface;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
-use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Helpers\SLoggerMetricsHelper;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
@@ -167,7 +166,9 @@ class SLoggerProcessor
 
         $traceId = SLoggerTraceHelper::makeTraceId();
 
-        $parentTraceId = $this->traceIdContainer->getParentTraceId();
+        $parentTraceId = $this->traceIdContainer->getParentTraceId()
+            // when a parent is in excluded
+            ?? $this->traceIdContainer->getPreParentTraceId();
 
         if (!$parentTraceId) {
             throw new LogicException("Parent trace id has not found for $type.");

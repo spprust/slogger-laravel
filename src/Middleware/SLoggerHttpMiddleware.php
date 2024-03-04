@@ -36,7 +36,9 @@ class SLoggerHttpMiddleware implements TerminableInterface
         $this->app['events']->dispatch(
             new SLoggerRequestHandling(
                 request: $request,
-                parentTraceId: is_array($parentTraceId) ? ($parentTraceId[0] ?? null) : null
+                parentTraceId: is_array($parentTraceId)
+                    ? ($parentTraceId[0] ?? null)
+                    : (is_string($parentTraceId) ? $parentTraceId : null)
             )
         );
 

@@ -14,6 +14,12 @@ use Symfony\Component\Console\Input\InputInterface;
 class SLoggerCommandWatcher extends AbstractSLoggerWatcher
 {
     protected array $commands = [];
+    protected array $exceptedCommands = [];
+
+    protected function init(): void
+    {
+        $this->exceptedCommands = $this->loggerConfig->commandsExcepted();
+    }
 
     public function register(): void
     {
@@ -28,7 +34,7 @@ class SLoggerCommandWatcher extends AbstractSLoggerWatcher
 
     protected function onHandleCommandStarting(CommandStarting $event): void
     {
-        if (in_array($event->command, $this->getExceptedCommands())) {
+        if (in_array($event->command, $this->exceptedCommands)) {
             return;
         }
 
@@ -83,10 +89,5 @@ class SLoggerCommandWatcher extends AbstractSLoggerWatcher
     protected function makeCommandView(?string $command, InputInterface $input): string
     {
         return $command ?? $input->getArguments()['command'] ?? 'default';
-    }
-
-    protected function getExceptedCommands(): array
-    {
-        return $this->app['config']['slogger.commands.excepted'];
     }
 }

@@ -24,24 +24,6 @@ use SLoggerLaravel\Watchers\Services\SLoggerScheduleWatcher;
 return [
     'enabled' => env('SLOGGER_ENABLED', false),
 
-    'requests' => [
-        'header_parent_trace_id_key' => env('SLOGGER_REQUESTS_HEADER_PARENT_TRACE_ID_KEY', 'x-parent-trace-id'),
-    ],
-
-    'commands' => [
-        'excepted' => [
-            'queue:work',
-            'queue:listen',
-        ],
-    ],
-
-    'jobs' => [
-        'excepted' => [
-            SLoggerTraceCreateJob::class,
-            SLoggerTraceUpdateJob::class,
-        ],
-    ],
-
     'http_client' => [
         'url'   => env('SLOGGER_HTTP_CLIENT_URL'),
         'token' => env('SLOGGER_HTTP_CLIENT_TOKEN'),
@@ -67,6 +49,44 @@ return [
     'listeners' => [
         SLoggerWatcherErrorEvent::class => [
             SLoggerWatcherErrorListener::class,
+        ],
+    ],
+
+    'watchers_customizing' => [
+        'requests' => [
+            'header_parent_trace_id_key' => env('SLOGGER_REQUESTS_HEADER_PARENT_TRACE_ID_KEY', 'x-parent-trace-id'),
+
+            'excepted_paths' => [
+                //
+            ],
+
+            'paths_with_cleaning_of_response' => [
+                'admin-api/auth/*',
+            ],
+
+            'mask_request_header_fields' => [
+                'authorization',
+                'cookie',
+                'x-xsrf-token',
+            ],
+
+            'mask_response_header_fields' => [
+                'set-cookie',
+            ],
+        ],
+
+        'commands' => [
+            'excepted' => [
+                'queue:work',
+                'queue:listen',
+            ],
+        ],
+
+        'jobs' => [
+            'excepted' => [
+                SLoggerTraceCreateJob::class,
+                SLoggerTraceUpdateJob::class,
+            ],
         ],
     ],
 

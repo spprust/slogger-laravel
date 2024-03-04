@@ -68,9 +68,6 @@ class SLoggerEventWatcher extends AbstractSLoggerWatcher
 
                 return 'closure';
             })
-            ->reject(function ($listener) {
-                return Str::contains($listener, 'Laravel\\Telescope');
-            })
             ->map(function ($listener) {
                 if (Str::contains($listener, '@')) {
                     $queued = in_array(ShouldQueue::class, class_implements(Str::beforeLast($listener, '@')));
@@ -101,6 +98,7 @@ class SLoggerEventWatcher extends AbstractSLoggerWatcher
                 'bootstrapping*',
                 'creating*',
                 'composing*',
+                'SLoggerLaravel\*',
             ],
             $eventName
         );

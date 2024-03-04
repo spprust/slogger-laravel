@@ -6,10 +6,13 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as IlluminateResponse;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Events\SLoggerRequestHandling;
+use SLoggerLaravel\Helpers\SLoggerArrayHelper;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Middleware\SLoggerHttpMiddleware;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
@@ -22,6 +25,19 @@ use Symfony\Component\HttpFoundation\Response;
 class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 {
     protected array $requests = [];
+
+    protected array $exceptedPaths = [];
+    protected array $pathsWithCleaningOfResponse = [];
+    protected array $maskRequestHeaderFields = [];
+    protected array $maskResponseHeaderFields = [];
+
+    protected function init(): void
+    {
+        $this->exceptedPaths               = $this->loggerConfig->requestsExceptedPaths();
+        $this->pathsWithCleaningOfResponse = $this->loggerConfig->requestsPathsWithCleaningOfResponse();
+        $this->maskRequestHeaderFields     = $this->loggerConfig->requestsMaskRequestHeaderFields();
+        $this->maskResponseHeaderFields    = $this->loggerConfig->requestsMaskResponseHeaderFields();
+    }
 
     public function register(): void
     {
@@ -36,11 +52,16 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
     protected function onHandleRequestHandling(SLoggerRequestHandling $event): void
     {
+        if ($this->isRequestByPatterns($event->request, $this->exceptedPaths)) {
+            return;
+        }
+
         $parentTraceId = $event->parentTraceId;
 
         $traceId = $this->processor->startAndGetTraceId(
             type: SLoggerTraceTypeEnum::Request->value,
             tags: $this->getTags($event->request),
+            data: $this->getCommonRequestData($event->request),
             customParentTraceId: $parentTraceId
         );
 
@@ -56,6 +77,10 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
     protected function onHandleRequestHandled(RequestHandled $event): void
     {
+        if ($this->isRequestByPatterns($event->request, $this->exceptedPaths)) {
+            return;
+        }
+
         $requestData = array_pop($this->requests);
 
         if (!$requestData) {
@@ -70,15 +95,24 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         $response = $event->response;
 
         $data = [
-            'ip_address'      => $request->ip(),
-            'uri'             => str_replace($request->root(), '', $request->fullUrl()) ?: '/',
-            'method'          => $request->method(),
-            'action'          => optional($request->route())->getActionName(),
-            'middlewares'     => array_values(optional($request->route())->gatherMiddleware() ?? []),
-            'headers'         => $this->prepareHeaders($request, $request->headers->all()),
-            'payload'         => $this->preparePayload($request, $this->getInput($request)),
-            'response_status' => $response->getStatusCode(),
-            'response'        => $this->prepareResponse($request, $response),
+            ...$this->getCommonRequestData($request),
+            'action'      => optional($request->route())->getActionName(),
+            'middlewares' => array_values(optional($request->route())->gatherMiddleware() ?? []),
+            'request'     => [
+                'headers' => $this->prepareHeaders(
+                    $request->headers->all(),
+                    $this->maskRequestHeaderFields
+                ),
+                'payload' => $this->preparePayload($request, $this->getInput($request)),
+            ],
+            'response'    => [
+                'status'  => $response->getStatusCode(),
+                'headers' => $this->prepareHeaders(
+                    $response->headers->all(),
+                    $this->maskResponseHeaderFields
+                ),
+                'data'    => $this->prepareResponseData($request, $response),
+            ],
             ...$this->getAdditionalData(),
         ];
 
@@ -90,6 +124,15 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
             data: $data,
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );
+    }
+
+    protected function getCommonRequestData(Request $request): array
+    {
+        return [
+            'ip_address' => $request->ip(),
+            'uri'        => str_replace($request->root(), '', $request->fullUrl()) ?: '/',
+            'method'     => $request->method(),
+        ];
     }
 
     protected function getTags(Request $request): array
@@ -104,9 +147,9 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         return [];
     }
 
-    protected function prepareHeaders(Request $request, array $headers): array
+    protected function prepareHeaders(array $headers, array $maskHeaderFields): array
     {
-        return collect($headers)
+        return collect($this->clearHeaders($headers, $maskHeaderFields))
             ->map(fn($header) => implode(', ', $header))
             ->all();
     }
@@ -130,8 +173,14 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         return array_replace_recursive($request->input(), $files);
     }
 
-    protected function prepareResponse(Request $request, Response $response): array
+    protected function prepareResponseData(Request $request, Response $response): array
     {
+        if ($this->isRequestByPatterns($request, $this->pathsWithCleaningOfResponse)) {
+            return [
+                'data' => "<cleaned>",
+            ];
+        }
+
         if ($response instanceof RedirectResponse) {
             return [
                 'redirect' => $response->getTargetUrl(),
@@ -150,4 +199,48 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         return [];
     }
+
+    protected function isRequestByPatterns(Request $request, array $patterns): bool
+    {
+        $path = trim($request->getPathInfo(), '/');
+
+        foreach ($patterns as $pattern) {
+            $pattern = trim($pattern, '/');
+
+            if (Str::is($pattern, $path)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function clearHeaders(array $headers, array $maskFieldNames): array
+    {
+        foreach ($maskFieldNames as $fieldName) {
+            $fieldName = SLoggerArrayHelper::findKeyInsensitive($headers, $fieldName);
+
+            if (!$fieldName) {
+                continue;
+            }
+
+            $value   = $headers[$fieldName];
+            $isArray = is_array($value);
+
+            if (!$isArray) {
+                $len = Str::length($value);
+
+                Arr::set($headers, $fieldName, "<cleaned:len-$len>");
+            } else {
+                foreach ($value as $key => $itemValue) {
+                    $len = Str::length($itemValue);
+
+                    Arr::set($headers, "$fieldName.$key", "<cleaned:len-$len>");
+                }
+            }
+        }
+
+        return $headers;
+    }
+
 }

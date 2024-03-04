@@ -2,8 +2,8 @@
 
 namespace SLoggerLaravel\Profiling;
 
-use Illuminate\Contracts\Foundation\Application;
 use SLoggerLaravel\Profiling\Dto\SLoggerProfilingObjects;
+use SLoggerLaravel\SLoggerConfig;
 
 abstract class AbstractSLoggerProfiling
 {
@@ -14,9 +14,11 @@ abstract class AbstractSLoggerProfiling
 
     abstract protected function onStop(): ?SLoggerProfilingObjects;
 
-    public function __construct(private readonly Application $app)
+    public function __construct(
+        private readonly SLoggerConfig $loggerConfig
+    )
     {
-        $this->profilingEnabled = $this->app['config']['slogger.profiling.enabled'];
+        $this->profilingEnabled = $this->loggerConfig->profilingEnabled();
     }
 
     public function start(): void

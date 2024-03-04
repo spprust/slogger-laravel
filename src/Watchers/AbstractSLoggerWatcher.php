@@ -7,6 +7,7 @@ use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Events\Dispatcher;
 use SLoggerLaravel\Dispatcher\SLoggerTraceDispatcherInterface;
 use SLoggerLaravel\Events\SLoggerWatcherErrorEvent;
+use SLoggerLaravel\SLoggerConfig;
 use SLoggerLaravel\SLoggerProcessor;
 use SLoggerLaravel\Traces\SLoggerTraceIdContainer;
 use Throwable;
@@ -21,7 +22,8 @@ abstract class AbstractSLoggerWatcher
         protected readonly Application $app,
         protected readonly SLoggerTraceDispatcherInterface $traceDispatcher,
         protected readonly SLoggerProcessor $processor,
-        protected readonly SLoggerTraceIdContainer $traceIdContainer
+        protected readonly SLoggerTraceIdContainer $traceIdContainer,
+        protected readonly SLoggerConfig $loggerConfig,
     ) {
         $this->events = $this->app['events'];
 

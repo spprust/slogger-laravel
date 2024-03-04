@@ -17,6 +17,7 @@ class SLoggerServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->app->singleton(SLoggerConfig::class);
         $this->app->singleton(SLoggerState::class);
         $this->app->singleton(SLoggerProcessor::class);
         $this->app->singleton(SLoggerTraceIdContainer::class);

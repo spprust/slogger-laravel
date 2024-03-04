@@ -18,6 +18,12 @@ use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 class SLoggerJobWatcher extends AbstractSLoggerWatcher
 {
     protected array $jobs = [];
+    protected array $exceptedJobs = [];
+
+    protected function init(): void
+    {
+        $this->exceptedJobs = $this->loggerConfig->jobsExcepted();
+    }
 
     public function register(): void
     {
@@ -45,7 +51,7 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
 
         $jobClass = $payload['displayName'] ?? null;
 
-        if (in_array($jobClass, $this->getExceptedJobs())) {
+        if (in_array($jobClass, $this->exceptedJobs)) {
             return;
         }
 
@@ -204,10 +210,5 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
         );
 
         unset($this->jobs[$uuid]);
-    }
-
-    protected function getExceptedJobs(): array
-    {
-        return $this->app['config']['slogger.jobs.excepted'];
     }
 }

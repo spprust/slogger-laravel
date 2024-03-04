@@ -25,9 +25,8 @@ class SLoggerDatabaseWatcher extends AbstractSLoggerWatcher
     {
         $data = [
             'connection' => $event->connectionName,
-            'bindings'   => $event->bindings,
+            'bindings'   => $this->maskValue($event->bindings),
             'sql'        => $event->sql,
-            'hash'       => md5($event->sql),
         ];
 
         $this->processor->push(
@@ -40,5 +39,34 @@ class SLoggerDatabaseWatcher extends AbstractSLoggerWatcher
             data: $data,
             duration: SLoggerTraceHelper::roundDuration($event->time / 1000)
         );
+    }
+
+    protected function maskValue(mixed $value): mixed
+    {
+        if (is_numeric($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            $length = Str::length($value);
+
+            if ($length > 5) {
+                return Str::mask($value, '*', ceil($length / 3));
+            }
+
+            return $value;
+        }
+
+        if (is_array($value)) {
+            $arrayValue = [];
+
+            foreach ($value as $valueKey => $valueValue) {
+                $arrayValue[$valueKey] = $this->maskValue($valueValue);
+            }
+
+            return $arrayValue;
+        }
+
+        return $value;
     }
 }

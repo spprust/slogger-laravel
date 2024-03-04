@@ -22,7 +22,7 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
     protected function init(): void
     {
         $this->headerTraceIdKey       = Str::random(20);
-        $this->headerParentTraceIdKey = $this->app['config']['slogger.requests.header_parent_trace_id_key'];
+        $this->headerParentTraceIdKey = $this->loggerConfig->requestsHeaderParentTraceIdKey();
     }
 
     public function register(): void
@@ -194,12 +194,6 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
 
     protected function getResponseBody(ResponseInterface $response): array
     {
-        $body = $response->getBody();
-
-        $content = json_decode($body->getContents(), true) ?: [];
-
-        $body->rewind();
-
-        return $content;
+        return SLoggerDataFormatter::responseBody($response->getBody());
     }
 }

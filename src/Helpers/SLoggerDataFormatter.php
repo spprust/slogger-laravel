@@ -4,7 +4,6 @@ namespace SLoggerLaravel\Helpers;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
-use Psr\Http\Message\StreamInterface;
 use Throwable;
 
 class SLoggerDataFormatter
@@ -23,25 +22,6 @@ class SLoggerDataFormatter
     public static function model(Model $model): string
     {
         return $model::class . ':' . $model->getKey();
-    }
-
-    public static function responseBody(StreamInterface $body): array
-    {
-        $size = $body->getSize();
-
-        if ($size >= 1000000) { // 1mb
-            return [
-                'body' => "<cleaned:size-$size>",
-            ];
-        }
-
-        $body->rewind();
-
-        $result = json_decode($body->getContents(), true) ?: [];
-
-        $body->rewind();
-
-        return $result;
     }
 
     /**

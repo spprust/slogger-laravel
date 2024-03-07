@@ -7,8 +7,10 @@ use Illuminate\Support\Str;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
+use SLoggerLaravel\Guzzle\SLoggerGuzzleHandlerFactory;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
+use SLoggerLaravel\RequestPreparer\SLoggerRequestDataFormatters;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 use Throwable;
 
@@ -48,7 +50,8 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
         }
 
         $traceId = $this->processor->startAndGetTraceId(
-            type: 'http-client'
+            type: 'http-client',
+            data: $this->getCommonRequestData($request)
         );
 
         $this->requests[$traceId] = [
@@ -68,17 +71,25 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
         return $request;
     }
 
-    final public function handleResponse(RequestInterface $request, array $options, ResponseInterface $response): void
-    {
+    final public function handleResponse(
+        RequestInterface $request,
+        array $options,
+        ResponseInterface $response,
+        SLoggerRequestDataFormatters $formatters
+    ): void {
         $this->safeHandleWatching(
-            function () use ($request, $options, $response) {
-                $this->onHandleResponse($request, $options, $response);
+            function () use ($request, $options, $response, $formatters) {
+                $this->onHandleResponse($request, $options, $response, $formatters);
             }
         );
     }
 
-    protected function onHandleResponse(RequestInterface $request, array $options, ResponseInterface $response): void
-    {
+    protected function onHandleResponse(
+        RequestInterface $request,
+        array $options,
+        ResponseInterface $response,
+        SLoggerRequestDataFormatters $formatters
+    ): void {
         if (!$this->isSubscribeRequest($request)) {
             return;
         }
@@ -105,33 +116,38 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
                 : SLoggerTraceStatusEnum::Failed->value,
             tags: $uri ? [$uri] : [],
             data: [
-                'method'   => $request->getMethod(),
-                'uri'      => $uri,
+                ...$this->getCommonRequestData($request),
                 'request'  => [
-                    'headers' => $this->getRequestHeaders($request),
-                    'payload' => $this->getRequestPayload($request),
+                    'headers' => $this->prepareRequestHeaders($request, $formatters),
+                    'payload' => $this->prepareRequestParameters($request, $formatters),
                 ],
                 'response' => [
                     'status_code' => $statusCode,
-                    'headers'     => $this->getResponseHeaders($response),
-                    'body'        => $this->getResponseBody($response),
+                    'headers'     => $this->prepareResponseHeaders($request, $response, $formatters),
+                    'body'        => $this->prepareResponseBody($request, $response, $formatters),
                 ],
             ],
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );
     }
 
-    final public function handleInvalidResponse(RequestInterface $request, Throwable $exception): void
-    {
+    final public function handleInvalidResponse(
+        RequestInterface $request,
+        Throwable $exception,
+        SLoggerRequestDataFormatters $formatters
+    ): void {
         $this->safeHandleWatching(
-            function () use ($request, $exception) {
-                $this->onHandleInvalidResponse($request, $exception);
+            function () use ($request, $exception, $formatters) {
+                $this->onHandleInvalidResponse($request, $exception, $formatters);
             }
         );
     }
 
-    protected function onHandleInvalidResponse(RequestInterface $request, Throwable $exception): void
-    {
+    protected function onHandleInvalidResponse(
+        RequestInterface $request,
+        Throwable $exception,
+        SLoggerRequestDataFormatters $formatters
+    ): void {
         if (!$this->isSubscribeRequest($request)) {
             return;
         }
@@ -154,11 +170,10 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
             status: SLoggerTraceStatusEnum::Failed->value,
             tags: $uri ? [$uri] : [],
             data: [
-                'method'    => $request->getMethod(),
-                'uri'       => $uri,
+                ...$this->getCommonRequestData($request),
                 'request'   => [
-                    'headers' => $this->getRequestHeaders($request),
-                    'payload' => $this->getRequestPayload($request),
+                    'headers' => $this->prepareRequestHeaders($request, $formatters),
+                    'payload' => $this->prepareRequestParameters($request, $formatters),
                 ],
                 'exception' => SLoggerDataFormatter::exception($exception),
             ],
@@ -171,29 +186,106 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
         return true;
     }
 
-    protected function getRequestHeaders(RequestInterface $request): array
-    {
-        return $request->getHeaders();
+    protected function prepareRequestHeaders(
+        RequestInterface $request,
+        SLoggerRequestDataFormatters $formatters
+    ): array {
+        $headers = $request->getHeaders();
+
+        foreach ($formatters?->getItems() ?? [] as $formatter) {
+            $headers = $formatter->prepareRequestHeaders(
+                url: $this->getRequestPath($request),
+                headers: $headers
+            );
+        }
+
+        return $headers;
     }
 
-    protected function getRequestPayload(RequestInterface $request): array
-    {
+    protected function prepareRequestParameters(
+        RequestInterface $request,
+        SLoggerRequestDataFormatters $formatters
+    ): array {
         $body = $request->getBody();
+
+        $parameters = json_decode($body->getContents(), true) ?: [];
+
+        $body->rewind();
+
+        $url = $this->getRequestPath($request);
+
+        foreach ($formatters?->getItems() ?? [] as $formatter) {
+            $parameters = $formatter->prepareRequestParameters(
+                url: $url,
+                parameters: $parameters
+            );
+        }
+
+        return $parameters;
+    }
+
+    protected function prepareResponseHeaders(
+        RequestInterface $request,
+        ResponseInterface $response,
+        SLoggerRequestDataFormatters $formatters
+    ): array {
+        $url = $this->getRequestPath($request);
+
+        $headers = $response->getHeaders();
+
+        foreach ($formatters?->getItems() ?? [] as $formatter) {
+            $headers = $formatter->prepareResponseHeaders(
+                url: $url,
+                headers: $headers
+            );
+        }
+
+        return $headers;
+    }
+
+    protected function prepareResponseBody(
+        RequestInterface $request,
+        ResponseInterface $response,
+        SLoggerRequestDataFormatters $formatters
+    ): array {
+        $body = $response->getBody();
+
+        $size = $body->getSize();
+
+        if ($size >= 1000000) { // 1mb
+            return [
+                '__cleaned' => "--cleaned:big-size-$size--",
+            ];
+        }
+
+        $body->rewind();
 
         $content = json_decode($body->getContents(), true) ?: [];
 
         $body->rewind();
 
+        $url = $this->getRequestPath($request);
+
+        foreach ($formatters?->getItems() ?? [] as $formatter) {
+            $content = $formatter->prepareResponseData(
+                url: $url,
+                data: $content
+            );
+        }
+
         return $content;
     }
 
-    protected function getResponseHeaders(ResponseInterface $response): array
+    protected function getCommonRequestData(RequestInterface $request): array
     {
-        return $response->getHeaders();
+        return [
+            'uri'    => $request->getUri(),
+            'method' => $request->getMethod(),
+        ];
     }
 
-    protected function getResponseBody(ResponseInterface $response): array
+    protected function getRequestPath(RequestInterface $request): string
     {
-        return SLoggerDataFormatter::responseBody($response->getBody());
+        return $request->getUri();
     }
 }

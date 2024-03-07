@@ -32,6 +32,7 @@ class SLoggerGateWatcher extends AbstractSLoggerWatcher
         $data = [
             'ability'   => $event->ability,
             'result'    => $result,
+            'user_id'   => $event->user?->getAuthIdentifier(),
             'arguments' => $this->prepareArguments($event->arguments),
         ];
 

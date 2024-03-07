@@ -34,7 +34,7 @@ class SLoggerDumpWatcher extends AbstractSLoggerWatcher
     protected function onHandleDump(mixed $dump): void
     {
         $data = [
-            'dump' => is_object($dump) ? json_decode(json_encode($dump), true) : $dump,
+            'dump' => is_object($dump) ? (print_r($dump, true)) : $dump,
         ];
 
         $this->processor->push(

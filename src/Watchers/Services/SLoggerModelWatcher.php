@@ -6,10 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
+use SLoggerLaravel\Helpers\SLoggerMaskHelper;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 
 class SLoggerModelWatcher extends AbstractSLoggerWatcher
 {
+    protected array $masks = [];
+
+    protected function init(): void
+    {
+        $this->masks = $this->loggerConfig->modelsMasks();
+    }
+
     public function register(): void
     {
         $this->listenEvent('eloquent.*', [$this, 'handleEvent']);
@@ -71,6 +79,23 @@ class SLoggerModelWatcher extends AbstractSLoggerWatcher
 
     protected function prepareChanges(Model $modelInstance): ?array
     {
-        return $modelInstance->getChanges() ?: null;
+        $changes = $modelInstance->getChanges() ?: null;
+
+        if (!$changes) {
+            return $changes;
+        }
+
+        $modelClass = $modelInstance::class;
+
+        $masksForAll = array_merge(
+            $this->masks['*'] ?? [],
+            $this->masks[$modelClass] ?? []
+        );
+
+        if (!$masksForAll) {
+            return $changes;
+        }
+
+        return SLoggerMaskHelper::maskArrayByPatterns($changes, $masksForAll);
     }
 }

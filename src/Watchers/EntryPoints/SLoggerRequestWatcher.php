@@ -6,15 +6,15 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as IlluminateResponse;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Events\SLoggerRequestHandling;
-use SLoggerLaravel\Helpers\SLoggerArrayHelper;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Middleware\SLoggerHttpMiddleware;
+use SLoggerLaravel\RequestPreparer\SLoggerRequestDataFormatter;
+use SLoggerLaravel\RequestPreparer\SLoggerRequestDataFormatters;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,16 +27,14 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
     protected array $requests = [];
 
     protected array $exceptedPaths = [];
-    protected array $pathsWithCleaningOfResponse = [];
-    protected array $maskRequestHeaderFields = [];
-    protected array $maskResponseHeaderFields = [];
+
+    protected SLoggerRequestDataFormatters $formatters;
 
     protected function init(): void
     {
-        $this->exceptedPaths               = $this->loggerConfig->requestsExceptedPaths();
-        $this->pathsWithCleaningOfResponse = $this->loggerConfig->requestsPathsWithCleaningOfResponse();
-        $this->maskRequestHeaderFields     = $this->loggerConfig->requestsMaskRequestHeaderFields();
-        $this->maskResponseHeaderFields    = $this->loggerConfig->requestsMaskResponseHeaderFields();
+        $this->exceptedPaths = $this->loggerConfig->requestsExceptedPaths();
+
+        $this->fillMaskers();
     }
 
     public function register(): void
@@ -96,21 +94,13 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         $data = [
             ...$this->getCommonRequestData($request),
-            'action'      => optional($request->route())->getActionName(),
-            'middlewares' => array_values(optional($request->route())->gatherMiddleware() ?? []),
-            'request'     => [
-                'headers' => $this->prepareHeaders(
-                    $request->headers->all(),
-                    $this->maskRequestHeaderFields
-                ),
-                'payload' => $this->preparePayload($request, $this->getInput($request)),
+            'request'  => [
+                'headers'    => $this->prepareRequestHeaders($request),
+                'parameters' => $this->prepareRequestParameters($request),
             ],
-            'response'    => [
+            'response' => [
                 'status'  => $response->getStatusCode(),
-                'headers' => $this->prepareHeaders(
-                    $response->headers->all(),
-                    $this->maskResponseHeaderFields
-                ),
+                'headers' => $this->prepareResponseHeaders($request, $response),
                 'data'    => $this->prepareResponseData($request, $response),
             ],
             ...$this->getAdditionalData(),
@@ -129,9 +119,11 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
     protected function getCommonRequestData(Request $request): array
     {
         return [
-            'ip_address' => $request->ip(),
-            'uri'        => str_replace($request->root(), '', $request->fullUrl()) ?: '/',
-            'method'     => $request->method(),
+            'ip_address'  => $request->ip(),
+            'uri'         => str_replace($request->root(), '', $request->fullUrl()) ?: '/',
+            'method'      => $request->method(),
+            'action'      => optional($request->route())->getActionName(),
+            'middlewares' => array_values(optional($request->route())->gatherMiddleware() ?? []),
         ];
     }
 
@@ -147,40 +139,47 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         return [];
     }
 
-    protected function prepareHeaders(array $headers, array $maskHeaderFields): array
+    protected function prepareRequestHeaders(Request $request): array
     {
-        return collect($this->clearHeaders($headers, $maskHeaderFields))
-            ->map(fn($header) => implode(', ', $header))
-            ->all();
+        $uri = $this->getRequestPath($request);
+
+        $headers = $request->headers->all();
+
+        foreach ($this->formatters->getItems() as $formatter) {
+            $headers = $formatter->prepareRequestHeaders($uri, $headers);
+        }
+
+        return $headers;
     }
 
-    protected function preparePayload(Request $request, array $payload): array
+    protected function prepareRequestParameters(Request $request): array
     {
-        return $payload;
+        $uri = $this->getRequestPath($request);
+
+        $parameters = $this->getRequestParameters($request);
+
+        foreach ($this->formatters->getItems() as $formatter) {
+            $parameters = $formatter->prepareRequestParameters($uri, $parameters);
+        }
+
+        return $parameters;
     }
 
-    protected function getInput(Request $request): array
+    protected function prepareResponseHeaders(Request $request, Response $response): array
     {
-        $files = $request->files->all();
+        $uri = $this->getRequestPath($request);
 
-        array_walk_recursive($files, function (&$file) {
-            $file = [
-                'name' => $file->getClientOriginalName(),
-                'size' => $file->isFile() ? ($file->getSize() / 1000) . 'KB' : '0',
-            ];
-        });
+        $headers = $response->headers->all();
 
-        return array_replace_recursive($request->input(), $files);
+        foreach ($this->formatters->getItems() as $formatter) {
+            $headers = $formatter->prepareResponseHeaders($uri, $headers);
+        }
+
+        return $headers;
     }
 
     protected function prepareResponseData(Request $request, Response $response): array
     {
-        if ($this->isRequestByPatterns($request, $this->pathsWithCleaningOfResponse)) {
-            return [
-                'data' => "<cleaned>",
-            ];
-        }
-
         if ($response instanceof RedirectResponse) {
             return [
                 'redirect' => $response->getTargetUrl(),
@@ -194,7 +193,15 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         }
 
         if ($request->acceptsJson()) {
-            return json_decode($response->getContent(), true) ?: [];
+            $uri = $this->getRequestPath($request);
+
+            $data = json_decode($response->getContent(), true) ?: [];
+
+            foreach ($this->formatters->getItems() as $masker) {
+                $data = $masker->prepareResponseData($uri, $data);
+            }
+
+            return $data;
         }
 
         return [];
@@ -215,32 +222,76 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         return false;
     }
 
-    protected function clearHeaders(array $headers, array $maskFieldNames): array
+    protected function getRequestParameters(Request $request): array
     {
-        foreach ($maskFieldNames as $fieldName) {
-            $fieldName = SLoggerArrayHelper::findKeyInsensitive($headers, $fieldName);
+        $files = $request->files->all();
 
-            if (!$fieldName) {
-                continue;
-            }
+        array_walk_recursive($files, function (&$file) {
+            $file = [
+                'name' => $file->getClientOriginalName(),
+                'size' => $file->isFile() ? ($file->getSize() / 1000) . 'KB' : '0',
+            ];
+        });
 
-            $value   = $headers[$fieldName];
-            $isArray = is_array($value);
-
-            if (!$isArray) {
-                $len = Str::length($value);
-
-                Arr::set($headers, $fieldName, "<cleaned:len-$len>");
-            } else {
-                foreach ($value as $key => $itemValue) {
-                    $len = Str::length($itemValue);
-
-                    Arr::set($headers, "$fieldName.$key", "<cleaned:len-$len>");
-                }
-            }
-        }
-
-        return $headers;
+        return array_replace_recursive($request->input(), $files);
     }
 
+    protected function fillMaskers(): void
+    {
+        /** @var array<string, SLoggerRequestDataFormatter> $formatterMap */
+        $formatterMap = [];
+
+        $pathsWithCleaningOfRequest = $this->loggerConfig->requestsPathsWithCleaningOfRequest();
+
+        foreach ($pathsWithCleaningOfRequest as $urlPattern) {
+            $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
+            $formatterMap[$urlPattern]->setClearRequestParameters(true);
+        }
+
+        $maskRequestHeaderFields = $this->loggerConfig->requestsMaskRequestHeaderFields();
+
+        foreach ($maskRequestHeaderFields as $urlPattern => $headers) {
+            $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
+            $formatterMap[$urlPattern]->addRequestHeaders($headers);
+        }
+
+        $maskRequestParameters = $this->loggerConfig->requestsMaskRequestParameters();
+
+        foreach ($maskRequestParameters as $urlPattern => $parameters) {
+            $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
+            $formatterMap[$urlPattern]->addRequestParameters($parameters);
+        }
+
+        $pathsWithCleaningOfResponse = $this->loggerConfig->requestsPathsWithCleaningOfResponse();
+
+        foreach ($pathsWithCleaningOfResponse as $urlPattern) {
+            $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
+            $formatterMap[$urlPattern]->setClearResponseData(true);
+        }
+
+        $maskResponseHeaderFields = $this->loggerConfig->requestsMaskResponseHeaderFields();
+
+        foreach ($maskResponseHeaderFields as $urlPattern => $headers) {
+            $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
+            $formatterMap[$urlPattern]->addResponseHeaders($headers);
+        }
+
+        $maskResponseFields = $this->loggerConfig->requestsMaskResponseFields();
+
+        foreach ($maskResponseFields as $urlPattern => $fields) {
+            $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
+            $formatterMap[$urlPattern]->addResponseDataFields($fields);
+        }
+
+        $this->formatters = new SLoggerRequestDataFormatters();
+
+        foreach ($formatterMap as $formatter) {
+            $this->formatters->add($formatter);
+        }
+    }
+
+    protected function getRequestPath(Request $request): string
+    {
+        return $request->path();
+    }
 }

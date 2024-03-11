@@ -12,7 +12,7 @@ class SLoggerRequestDataFormatter
         protected bool $hideAllRequestParameters = false,
         protected array $requestHeaders = [],
         protected array $requestParameters = [],
-        protected bool $hideAllResponseParameters = false,
+        protected bool $hideAllResponseData = false,
         protected array $responseHeaders = [],
         protected array $responseFields = [],
     ) {
@@ -39,9 +39,9 @@ class SLoggerRequestDataFormatter
         return $this;
     }
 
-    public function setHideAllResponseParameters(bool $hideAllResponseParameters): static
+    public function setHideAllResponseData(bool $hideAllResponseData): static
     {
-        $this->hideAllResponseParameters = $hideAllResponseParameters;
+        $this->hideAllResponseData = $hideAllResponseData;
 
         return $this;
     }
@@ -108,7 +108,7 @@ class SLoggerRequestDataFormatter
             return $data;
         }
 
-        if ($this->hideAllResponseParameters) {
+        if ($this->hideAllResponseData) {
             return [
                 '__cleaned' => null,
             ];

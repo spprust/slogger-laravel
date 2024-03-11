@@ -266,7 +266,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         foreach ($outputFullHiding as $urlPattern) {
             $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
-            $formatterMap[$urlPattern]->setHideAllResponseParameters(true);
+            $formatterMap[$urlPattern]->setHideAllResponseData(true);
         }
 
         $outputHeadersMasking = $this->loggerConfig->requestsOutputHeadersMasking();

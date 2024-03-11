@@ -9,53 +9,53 @@ class SLoggerRequestDataFormatter
 {
     public function __construct(
         protected array $urlPatterns,
-        protected bool $clearRequestParameters = false,
-        protected bool $clearResponseData = false,
+        protected bool $hideAllRequestParameters = false,
         protected array $requestHeaders = [],
         protected array $requestParameters = [],
+        protected bool $hideAllResponseParameters = false,
         protected array $responseHeaders = [],
-        protected array $responseDataFields = [],
+        protected array $responseFields = [],
     ) {
     }
 
-    public function setClearRequestParameters(bool $clearRequestParameters): static
+    public function setHideAllRequestParameters(bool $hideAllRequestParameters): static
     {
-        $this->clearRequestParameters = $clearRequestParameters;
+        $this->hideAllRequestParameters = $hideAllRequestParameters;
 
         return $this;
     }
 
-    public function setClearResponseData(bool $clearResponseData): static
+    public function addRequestHeaders(array $headers): static
     {
-        $this->clearResponseData = $clearResponseData;
+        $this->requestHeaders = array_merge($this->requestHeaders, $headers);
 
         return $this;
     }
 
-    public function addRequestHeaders(array $data): static
+    public function addRequestParameters(array $parameters): static
     {
-        $this->requestHeaders = array_merge($this->requestHeaders, $data);
+        $this->requestParameters = array_merge($this->requestParameters, $parameters);
 
         return $this;
     }
 
-    public function addRequestParameters(array $data): static
+    public function setHideAllResponseParameters(bool $hideAllResponseParameters): static
     {
-        $this->requestParameters = array_merge($this->requestParameters, $data);
+        $this->hideAllResponseParameters = $hideAllResponseParameters;
 
         return $this;
     }
 
-    public function addResponseHeaders(array $data): static
+    public function addResponseHeaders(array $headers): static
     {
-        $this->responseHeaders = array_merge($this->responseHeaders, $data);
+        $this->responseHeaders = array_merge($this->responseHeaders, $headers);
 
         return $this;
     }
 
-    public function addResponseDataFields(array $data): static
+    public function addResponseFields(array $fields): static
     {
-        $this->responseDataFields = array_merge($this->responseDataFields, $data);
+        $this->responseFields = array_merge($this->responseFields, $fields);
 
         return $this;
     }
@@ -78,7 +78,7 @@ class SLoggerRequestDataFormatter
             return $parameters;
         }
 
-        if ($this->clearRequestParameters) {
+        if ($this->hideAllRequestParameters) {
             return [
                 '__cleaned' => null,
             ];
@@ -108,7 +108,7 @@ class SLoggerRequestDataFormatter
             return $data;
         }
 
-        if ($this->clearResponseData) {
+        if ($this->hideAllResponseParameters) {
             return [
                 '__cleaned' => null,
             ];
@@ -116,7 +116,7 @@ class SLoggerRequestDataFormatter
 
         return SLoggerMaskHelper::maskArrayByPatterns(
             data: $data,
-            patterns: $this->responseDataFields
+            patterns: $this->responseFields
         );
     }
 

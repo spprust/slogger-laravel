@@ -54,55 +54,57 @@ return [
 
     'watchers_customizing' => [
         'requests' => [
-            'header_parent_trace_id_key'      => env(
+            'header_parent_trace_id_key' => env(
                 'SLOGGER_REQUESTS_HEADER_PARENT_TRACE_ID_KEY',
                 'x-parent-trace-id'
             ),
 
             /** url_patterns */
-            'excepted_paths'                  => [
+            'excepted_paths'             => [
                 //
             ],
 
-            /** url_patterns */
-            'paths_with_cleaning_of_request'  => [
-                'admin-api/auth/login',
-            ],
-
-            /** url_pattern => keys */
-            'mask_request_header_fields'      => [
-                '*' => [
-                    'authorization',
-                    'cookie',
-                    'x-xsrf-token',
+            'input' => [
+                /** url_patterns */
+                'full_hiding'        => [
+                    //
+                ],
+                /** url_pattern => keys */
+                'headers_masking'    => [
+                    '*' => [
+                        'authorization',
+                        'cookie',
+                        'x-xsrf-token',
+                    ],
+                ],
+                /** url_pattern => key_patterns */
+                'parameters_masking' => [
+                    '*' => [
+                        '*token*',
+                        '*password*',
+                    ],
                 ],
             ],
 
-            /** url_pattern => key_patterns */
-            'mask_request_parameters'         => [
-                '*' => [
-                    '*token*',
-                    '*password*',
+            'output' => [
+                /** url_patterns */
+                'full_hiding'     => [
+                    //
                 ],
-            ],
 
-            /** url_patterns */
-            'paths_with_cleaning_of_response' => [
-                'admin-api/auth/*',
-            ],
-
-            /** url_pattern => keys */
-            'mask_response_header_fields'     => [
-                '*' => [
-                    'set-cookie',
+                /** url_pattern => keys */
+                'headers_masking' => [
+                    '*' => [
+                        'set-cookie',
+                    ],
                 ],
-            ],
 
-            /** url_pattern => key_patterns */
-            'mask_response_fields'            => [
-                '*' => [
-                    '*token*',
-                    '*password*',
+                /** url_pattern => key_patterns */
+                'fields_masking'  => [
+                    '*' => [
+                        '*token*',
+                        '*password*',
+                    ],
                 ],
             ],
         ],
@@ -111,6 +113,7 @@ return [
             'excepted' => [
                 'queue:work',
                 'queue:listen',
+                'schedule:run',
             ],
         ],
 

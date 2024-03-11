@@ -44,3 +44,29 @@ SLOGGER_LOG_CACHE_ENABLED=true
 SLOGGER_LOG_DUMP_ENABLED=true
 SLOGGER_LOG_HTTP_ENABLED=true
 ```
+
+For requests watcher you can use the middleware
+```php
+\SLoggerLaravel\Middleware\SLoggerHttpMiddleware::class
+```
+
+For guzzle requests you can use the factory
+```php
+new \GuzzleHttp\Client([
+    'base_uri' => 'https://url.com',
+    'handler'  => app(\SLoggerLaravel\Guzzle\SLoggerGuzzleHandlerFactory::class)->prepareHandler(),
+])
+```
+
+### Profiling
+
+bash
+```bash
+pecl install xhprof
+```
+
+php.ini
+```ini
+[xhprof]
+extension=xhprof.so
+```

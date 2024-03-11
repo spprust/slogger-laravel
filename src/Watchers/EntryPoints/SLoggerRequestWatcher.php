@@ -241,46 +241,46 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         /** @var array<string, SLoggerRequestDataFormatter> $formatterMap */
         $formatterMap = [];
 
-        $pathsWithCleaningOfRequest = $this->loggerConfig->requestsPathsWithCleaningOfRequest();
+        $inputFullHiding = $this->loggerConfig->requestsInputFullHiding();
 
-        foreach ($pathsWithCleaningOfRequest as $urlPattern) {
+        foreach ($inputFullHiding as $urlPattern) {
             $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
-            $formatterMap[$urlPattern]->setClearRequestParameters(true);
+            $formatterMap[$urlPattern]->setHideAllRequestParameters(true);
         }
 
-        $maskRequestHeaderFields = $this->loggerConfig->requestsMaskRequestHeaderFields();
+        $inputMaskHeadersMasking = $this->loggerConfig->requestsInputMaskHeadersMasking();
 
-        foreach ($maskRequestHeaderFields as $urlPattern => $headers) {
+        foreach ($inputMaskHeadersMasking as $urlPattern => $headers) {
             $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
             $formatterMap[$urlPattern]->addRequestHeaders($headers);
         }
 
-        $maskRequestParameters = $this->loggerConfig->requestsMaskRequestParameters();
+        $inputParametersMasking = $this->loggerConfig->requestsInputParametersMasking();
 
-        foreach ($maskRequestParameters as $urlPattern => $parameters) {
+        foreach ($inputParametersMasking as $urlPattern => $parameters) {
             $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
             $formatterMap[$urlPattern]->addRequestParameters($parameters);
         }
 
-        $pathsWithCleaningOfResponse = $this->loggerConfig->requestsPathsWithCleaningOfResponse();
+        $outputFullHiding = $this->loggerConfig->requestsOutputFullHiding();
 
-        foreach ($pathsWithCleaningOfResponse as $urlPattern) {
+        foreach ($outputFullHiding as $urlPattern) {
             $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
-            $formatterMap[$urlPattern]->setClearResponseData(true);
+            $formatterMap[$urlPattern]->setHideAllResponseParameters(true);
         }
 
-        $maskResponseHeaderFields = $this->loggerConfig->requestsMaskResponseHeaderFields();
+        $outputHeadersMasking = $this->loggerConfig->requestsOutputHeadersMasking();
 
-        foreach ($maskResponseHeaderFields as $urlPattern => $headers) {
+        foreach ($outputHeadersMasking as $urlPattern => $headers) {
             $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
             $formatterMap[$urlPattern]->addResponseHeaders($headers);
         }
 
-        $maskResponseFields = $this->loggerConfig->requestsMaskResponseFields();
+        $outputFieldsMasking = $this->loggerConfig->requestsOutputFieldsMasking();
 
-        foreach ($maskResponseFields as $urlPattern => $fields) {
+        foreach ($outputFieldsMasking as $urlPattern => $fields) {
             $formatterMap[$urlPattern] ??= new SLoggerRequestDataFormatter([$urlPattern]);
-            $formatterMap[$urlPattern]->addResponseDataFields($fields);
+            $formatterMap[$urlPattern]->addResponseFields($fields);
         }
 
         $this->formatters = new SLoggerRequestDataFormatters();

@@ -18,6 +18,10 @@ abstract class AbstractSLoggerTraceJob implements ShouldQueue
 
     abstract protected function onHandle(SLoggerHttpClient $loggerHttpClient): void;
 
+    public int $tries = 60;
+
+    public int $timeout = 5;
+
     public function __construct()
     {
         $this->onConnection(config('slogger.queue.connection'))

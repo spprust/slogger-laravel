@@ -195,7 +195,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         if ($request->acceptsJson()) {
             $uri = $this->getRequestPath($request);
 
-            $data = $this->getResponseContentData($response);
+            $data = $this->getResponseContentData($request, $response);
 
             foreach ($this->formatters->getItems() as $masker) {
                 $data = $masker->prepareResponseData($uri, $data);
@@ -207,7 +207,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         return [];
     }
 
-    protected function getResponseContentData(Response $response): array
+    protected function getResponseContentData(Request $request, Response $response): array
     {
         return json_decode($response->getContent(), true) ?: [];
     }

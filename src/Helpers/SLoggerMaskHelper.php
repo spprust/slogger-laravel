@@ -41,14 +41,25 @@ class SLoggerMaskHelper
 
     private static function maskValue(mixed $value): mixed
     {
+        if (!$value) {
+            return $value;
+        }
+
         if (!is_string($value) && !is_numeric($value)) {
             $value = '********';
         } else {
-            $value = Str::mask(
-                string: (string) $value,
-                character: '*',
-                index: ceil(Str::length($value) / 4)
-            );
+            if (strlen($value) === 1) {
+                $value = '*';
+            } else {
+                $batchLength = (int) ceil(Str::length($value) / 4);
+
+                $value = Str::mask(
+                    string: (string) $value,
+                    character: '*',
+                    index: $batchLength,
+                    length: ($batchLength * 2) ?: 1
+                );
+            }
         }
 
         return $value;

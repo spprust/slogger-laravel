@@ -58,7 +58,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         $traceId = $this->processor->startAndGetTraceId(
             type: SLoggerTraceTypeEnum::Request->value,
-            tags: $this->getTags($event->request),
+            tags: $this->getPreTags($event->request),
             data: $this->getCommonRequestData($event->request),
             customParentTraceId: $parentTraceId
         );
@@ -111,6 +111,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
             status: $response->isSuccessful()
                 ? SLoggerTraceStatusEnum::Success->value
                 : SLoggerTraceStatusEnum::Failed->value,
+            tags: $this->getPostTags($request, $response),
             data: $data,
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );
@@ -127,10 +128,24 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         ];
     }
 
-    protected function getTags(Request $request): array
+    protected function getPreTags(Request $request): array
     {
         return [
             $request->getPathInfo(),
+        ];
+    }
+
+    protected function getPostTags(Request $request, Response $response): ?array
+    {
+        $route = $request->route();
+
+        if (!$route) {
+            return null;
+        }
+
+        return [
+            $route->uri(),
+            ...array_values($route->originalParameters()),
         ];
     }
 

@@ -135,12 +135,12 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         ];
     }
 
-    protected function getPostTags(Request $request, Response $response): ?array
+    protected function getPostTags(Request $request, Response $response): array
     {
         $route = $request->route();
 
         if (!$route) {
-            return null;
+            return [];
         }
 
         return [

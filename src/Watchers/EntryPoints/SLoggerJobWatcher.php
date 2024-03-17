@@ -63,14 +63,6 @@ class SLoggerJobWatcher extends AbstractSLoggerWatcher
 
         $parentTraceId = $payload['slogger_parent_trace_id'] ?? null;
 
-        if (!$parentTraceId) {
-            return;
-        }
-
-        if (!$this->processor->isActive()) {
-            $this->traceIdContainer->setParentTraceId($parentTraceId);
-        }
-
         $traceId = $this->processor->startAndGetTraceId(
             type: SLoggerTraceTypeEnum::Job->value,
             tags: [

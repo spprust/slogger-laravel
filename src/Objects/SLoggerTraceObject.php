@@ -52,7 +52,7 @@ class SLoggerTraceObject
             duration: $data['duration'],
             memory: $data['memory'],
             cpu: $data['cpu'],
-            loggedAt: (new Carbon($data['loggedAt']))->setTimezone('UTC'),
+            loggedAt: new Carbon($data['loggedAt'], 'UTC'),
         );
     }
 }

@@ -32,7 +32,9 @@ class SLoggerTraceObject
             'duration'      => $this->duration,
             'memory'        => $this->memory,
             'cpu'           => $this->cpu,
-            'loggedAt'      => serialize($this->loggedAt),
+            'loggedAt'      => $this->loggedAt->clone()
+                ->setTimezone('UTC')
+                ->toDateTimeString('microsecond'),
         ]);
     }
 
@@ -50,7 +52,7 @@ class SLoggerTraceObject
             duration: $data['duration'],
             memory: $data['memory'],
             cpu: $data['cpu'],
-            loggedAt: unserialize($data['loggedAt']),
+            loggedAt: (new Carbon($data['loggedAt']))->setTimezone('UTC'),
         );
     }
 }

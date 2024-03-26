@@ -36,7 +36,7 @@ class SLoggerTraceQueueDispatcher implements SLoggerTraceDispatcherInterface
         $traceObjects = (new SLoggerTraceUpdateObjects())
             ->add($parameters);
 
-        dispatch(new SLoggerTraceUpdateJob($traceObjects));
+        dispatch(new SLoggerTraceUpdateJob($traceObjects->toJson()));
     }
 
     protected function sendAndClearTraces(): void
@@ -47,7 +47,7 @@ class SLoggerTraceQueueDispatcher implements SLoggerTraceDispatcherInterface
             $traceObjects->add($trace);
         }
 
-        dispatch(new SLoggerTraceCreateJob($traceObjects));
+        dispatch(new SLoggerTraceCreateJob($traceObjects->toJson()));
 
         $this->traces = [];
     }

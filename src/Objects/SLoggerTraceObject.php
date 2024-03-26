@@ -19,4 +19,38 @@ class SLoggerTraceObject
         public Carbon $loggedAt
     ) {
     }
+
+    public function toJson(): string
+    {
+        return json_encode([
+            'traceId'       => $this->traceId,
+            'parentTraceId' => $this->parentTraceId,
+            'type'          => $this->type,
+            'status'        => $this->status,
+            'tags'          => $this->tags,
+            'data'          => $this->data,
+            'duration'      => $this->duration,
+            'memory'        => $this->memory,
+            'cpu'           => $this->cpu,
+            'loggedAt'      => (string) $this->loggedAt,
+        ]);
+    }
+
+    public static function fromJson(string $json): static
+    {
+        $data = json_decode($json, true);
+
+        return new static(
+            traceId: $data['traceId'],
+            parentTraceId: $data['parentTraceId'],
+            type: $data['type'],
+            status: $data['status'],
+            tags: $data['tags'],
+            data: $data['data'],
+            duration: $data['duration'],
+            memory: $data['memory'],
+            cpu: $data['cpu'],
+            loggedAt: new Carbon($data['loggedAt']),
+        );
+    }
 }

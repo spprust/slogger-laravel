@@ -32,7 +32,7 @@ class SLoggerTraceObject
             'duration'      => $this->duration,
             'memory'        => $this->memory,
             'cpu'           => $this->cpu,
-            'loggedAt'      => (string) $this->loggedAt,
+            'loggedAt'      => serialize($this->loggedAt),
         ]);
     }
 
@@ -50,7 +50,7 @@ class SLoggerTraceObject
             duration: $data['duration'],
             memory: $data['memory'],
             cpu: $data['cpu'],
-            loggedAt: new Carbon($data['loggedAt']),
+            loggedAt: unserialize($data['loggedAt']),
         );
     }
 }

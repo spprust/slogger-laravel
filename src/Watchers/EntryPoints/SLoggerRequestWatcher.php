@@ -119,9 +119,11 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
     protected function getCommonRequestData(Request $request): array
     {
+        $url = str_replace($request->root(), '', $request->fullUrl());
+
         return [
             'ip_address'  => $request->ip(),
-            'uri'         => str_replace($request->root(), '', $request->fullUrl()) ?: '/',
+            'uri'         => '/' . ltrim($url, '/'),
             'method'      => $request->method(),
             'action'      => optional($request->route())->getActionName(),
             'middlewares' => array_values(optional($request->route())->gatherMiddleware() ?? []),

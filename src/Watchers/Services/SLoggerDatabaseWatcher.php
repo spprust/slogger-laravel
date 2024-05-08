@@ -6,6 +6,7 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Str;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
+use SLoggerLaravel\Helpers\SLoggerMaskHelper;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Watchers\AbstractSLoggerWatcher;
 
@@ -43,17 +44,15 @@ class SLoggerDatabaseWatcher extends AbstractSLoggerWatcher
 
     protected function maskValue(mixed $value): mixed
     {
-        if (is_numeric($value)) {
+        if (is_string($value)) {
+            if (Str::length($value) > 5) {
+                return SLoggerMaskHelper::maskValue($value);
+            }
+
             return $value;
         }
 
-        if (is_string($value)) {
-            $length = Str::length($value);
-
-            if ($length > 5) {
-                return Str::mask($value, '*', ceil($length / 3));
-            }
-
+        if (is_numeric($value)) {
             return $value;
         }
 

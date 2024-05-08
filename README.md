@@ -1,5 +1,5 @@
 
-# SLogger for laravel 
+# SLogger for laravel
 
 ## Installation
 
@@ -54,7 +54,26 @@ For guzzle requests you can use the factory
 ```php
 new \GuzzleHttp\Client([
     'base_uri' => 'https://url.com',
-    'handler'  => app(\SLoggerLaravel\Guzzle\SLoggerGuzzleHandlerFactory::class)->prepareHandler(),
+    'handler'  => app(\SLoggerLaravel\Guzzle\SLoggerGuzzleHandlerFactory::class)->prepareHandler(
+        (new SLoggerRequestDataFormatters())
+            ->add(
+                new SLoggerRequestDataFormatter(
+                    urlPatterns: ['*'],
+                    requestHeaders: [
+                        'authorization',
+                    ]
+                )
+            )
+            ->add(
+                new SLoggerRequestDataFormatter(
+                    urlPatterns: [
+                        '/api/auth/*',
+                        '*sensitive/some/*',
+                    ],
+                    hideAllResponseData: true
+                )
+            )
+    ),
 ])
 ```
 

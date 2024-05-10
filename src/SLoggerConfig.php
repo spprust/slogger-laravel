@@ -17,7 +17,7 @@ readonly class SLoggerConfig
 
     public function profilingEnabled(): bool
     {
-        return (bool) ($this->config['profiling.enabled'] ?? false);
+        return (bool) ($this->config['slogger.profiling.enabled'] ?? false);
     }
 
     public function requestsHeaderParentTraceIdKey(): ?string

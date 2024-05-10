@@ -1,5 +1,5 @@
 
-# SLogger for laravel
+# SLogger for laravel 
 
 ## Installation
 

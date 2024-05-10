@@ -39,10 +39,10 @@ class SLoggerXHProfProfiler extends AbstractSLoggerProfiling
                     callable: $methodData[1] ?? 'empty',
                     data: new SLoggerProfilingDataObject(
                         numberOfCalls: $data['ct'],
-                        waitTimeInMs: $data['wt'],
+                        waitTimeInUs: $data['wt'],
                         cpuTime: $data['cpu'],
                         memoryUsageInBytes: $data['mu'],
-                        peakMemoryUsageInMb: $data['pmu'],
+                        peakMemoryUsageInBytes: $data['pmu'],
                     )
                 )
             );

@@ -32,11 +32,17 @@ class SLoggerXHProfProfiler extends AbstractSLoggerProfiling
         foreach (xhprof_disable() as $method => $data) {
             $methodData = explode('==>', $method);
 
+            $callable = $methodData[1] ?? null;
+
+            if (is_null($callable)) {
+                continue;
+            }
+
             $profilingItems->add(
                 new SLoggerProfilingObject(
                     raw: $method,
                     calling: $methodData[0],
-                    callable: $methodData[1] ?? 'empty',
+                    callable: $callable,
                     data: new SLoggerProfilingDataObject(
                         numberOfCalls: $data['ct'],
                         waitTimeInUs: $data['wt'],

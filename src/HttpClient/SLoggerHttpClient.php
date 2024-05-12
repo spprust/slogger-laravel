@@ -93,15 +93,23 @@ class SLoggerHttpClient
                 'calling'  => $item->calling,
                 'callable' => $item->callable,
                 'data'     => [
-                    'number_of_calls'            => $item->data->numberOfCalls,
-                    'wait_time_in_us'            => $item->data->waitTimeInUs,
-                    'cpu_time'                   => $item->data->cpuTime,
-                    'memory_usage_in_bytes'      => $item->data->memoryUsageInBytes,
-                    'peak_memory_usage_in_bytes' => $item->data->peakMemoryUsageInBytes,
+                    $this->makeProfileDataItem('wait (us)', $item->data->waitTimeInUs),
+                    $this->makeProfileDataItem('calls', $item->data->numberOfCalls),
+                    $this->makeProfileDataItem('cpu', $item->data->cpuTime),
+                    $this->makeProfileDataItem('mem (b)', $item->data->memoryUsageInBytes),
+                    $this->makeProfileDataItem('mem peak (b)', $item->data->peakMemoryUsageInBytes),
                 ],
             ];
         }
 
         return $result;
+    }
+
+    private function makeProfileDataItem(string $name, int|float $value): array
+    {
+        return [
+            'name'  => $name,
+            'value' => $value,
+        ];
     }
 }

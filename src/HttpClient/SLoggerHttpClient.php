@@ -102,7 +102,10 @@ class SLoggerHttpClient
             ];
         }
 
-        return $result;
+        return [
+            'main_caller' => $profiling->getMainCaller(),
+            'items'       => $result,
+        ];
     }
 
     private function makeProfileDataItem(string $name, int|float $value): array

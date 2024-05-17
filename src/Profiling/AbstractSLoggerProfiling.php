@@ -16,8 +16,7 @@ abstract class AbstractSLoggerProfiling
 
     public function __construct(
         private readonly SLoggerConfig $loggerConfig
-    )
-    {
+    ) {
         $this->profilingEnabled = $this->loggerConfig->profilingEnabled();
     }
 
@@ -38,14 +37,8 @@ abstract class AbstractSLoggerProfiling
 
         $profilingObjects = $this->onStop();
 
-        $filteredProfilingObjects = new SLoggerProfilingObjects();
-
-        foreach ($profilingObjects->getItems() as $profilingObject) {
-            $filteredProfilingObjects->add($profilingObject);
-        }
-
         $this->profilingStarted = false;
 
-        return $filteredProfilingObjects;
+        return $profilingObjects;
     }
 }

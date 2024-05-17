@@ -27,7 +27,9 @@ class SLoggerXHProfProfiler extends AbstractSLoggerProfiling
             return null;
         }
 
-        $profilingItems = new SLoggerProfilingObjects();
+        $profilingItems = new SLoggerProfilingObjects(
+            mainCaller: 'main()'
+        );
 
         foreach (xhprof_disable() as $method => $data) {
             $methodData = explode('==>', $method);

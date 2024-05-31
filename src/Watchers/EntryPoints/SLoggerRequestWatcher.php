@@ -123,7 +123,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         return [
             'ip_address'  => $request->ip(),
-            'uri'         => '/' . ltrim($url, '/'),
+            'uri'         => $this->prepareUrl($url),
             'method'      => $request->method(),
             'action'      => optional($request->route())->getActionName(),
             'middlewares' => array_values(optional($request->route())->gatherMiddleware() ?? []),
@@ -133,7 +133,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
     protected function getPreTags(Request $request): array
     {
         return [
-            $request->getPathInfo(),
+            $this->prepareUrl($request->getPathInfo()),
         ];
     }
 
@@ -146,9 +146,14 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         }
 
         return [
-            $route->uri(),
+            $this->prepareUrl($route->uri()),
             ...array_values($route->originalParameters()),
         ];
+    }
+
+    protected function prepareUrl(string $url): string
+    {
+        return '/' . ltrim($url, '/');
     }
 
     protected function getAdditionalData(): array

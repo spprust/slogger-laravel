@@ -38,11 +38,18 @@ class SLoggerCommandWatcher extends AbstractSLoggerWatcher
             return;
         }
 
+        $data = [
+            'command'   => $this->makeCommandView($event->command, $event->input),
+            'arguments' => $event->input->getArguments(),
+            'options'   => $event->input->getOptions(),
+        ];
+
         $traceId = $this->processor->startAndGetTraceId(
             type: SLoggerTraceTypeEnum::Command->value,
             tags: [
                 $this->makeCommandView($event->command, $event->input),
-            ]
+            ],
+            data: $data
         );
 
         $this->commands[] = [

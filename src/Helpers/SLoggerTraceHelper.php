@@ -25,6 +25,9 @@ class SLoggerTraceHelper
         return round($duration, 6);
     }
 
+    /**
+     * @deprecated
+     */
     public static function injectCallerToData(array &$data): void
     {
         $caller = self::getCallerFromStackTrace();
@@ -41,6 +44,38 @@ class SLoggerTraceHelper
         ];
     }
 
+    public static function injectTraceToData(array &$data): void
+    {
+        $basePathVendor   = base_path('vendor' . DIRECTORY_SEPARATOR);
+        $basePathPackages = base_path('packages' . DIRECTORY_SEPARATOR);
+
+        $backTrace = collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS))->forget([0]);
+
+        $trace = [];
+
+        foreach ($backTrace as $frame) {
+            if (!isset($frame['file']) || !isset($frame['line'])) {
+                continue;
+            }
+
+            if (Str::startsWith($frame['file'], $basePathVendor)
+                || Str::startsWith($frame['file'], $basePathPackages)
+            ) {
+                continue;
+            }
+
+            $trace[] = [
+                'file' => $frame['file'],
+                'line' => $frame['line'],
+            ];
+        }
+
+        $data['__trace'] = $trace;
+    }
+
+    /**
+     * @deprecated
+     */
     private static function getCallerFromStackTrace(): array
     {
         $trace = collect(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS))->forget([0]);

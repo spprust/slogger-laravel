@@ -126,7 +126,7 @@ class SLoggerProcessor
 
         $parentTraceId = $this->traceIdContainer->getParentTraceId();
 
-        SLoggerTraceHelper::injectCallerToData($data);
+        SLoggerTraceHelper::injectTraceToData($data);
 
         $this->traceDispatcher->push(
             new SLoggerTraceObject(
@@ -174,7 +174,7 @@ class SLoggerProcessor
             throw new LogicException("Parent trace id has not found for $type.");
         }
 
-        SLoggerTraceHelper::injectCallerToData($data);
+        SLoggerTraceHelper::injectTraceToData($data);
 
         $this->traceDispatcher->push(
             new SLoggerTraceObject(
@@ -223,7 +223,7 @@ class SLoggerProcessor
             $this->traceIdContainer->setParentTraceId(null);
         }
 
-        SLoggerTraceHelper::injectCallerToData($data);
+        SLoggerTraceHelper::injectTraceToData($data);
 
         $parameters = new SLoggerTraceUpdateObject(
             traceId: $traceId,

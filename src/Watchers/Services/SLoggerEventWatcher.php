@@ -32,21 +32,41 @@ class SLoggerEventWatcher extends AbstractSLoggerWatcher
             return;
         }
 
-        $data = [
+        $this->processor->push(
+            type: SLoggerTraceTypeEnum::Event->value,
+            status: SLoggerTraceStatusEnum::Success->value,
+            tags: $this->prepareTags($eventName, $payload),
+            data: $this->prepareData($eventName, $payload),
+        );
+    }
+
+    protected function prepareTags(string $eventName, array $payload): array
+    {
+        return [
+            $eventName,
+        ];
+    }
+
+    protected function prepareData(string $eventName, array $payload): array
+    {
+        $payloadData = $this->preparePayload($payload);
+
+        return [
             'name'      => $eventName,
             'listeners' => $this->formatListeners($eventName),
             'broadcast' => class_exists($eventName)
                 && in_array(ShouldBroadcast::class, (array) class_implements($eventName)),
+            ...($payloadData
+                ? [
+                    'payload' => $payloadData,
+                ]
+                : []),
         ];
+    }
 
-        $this->processor->push(
-            type: SLoggerTraceTypeEnum::Event->value,
-            status: SLoggerTraceStatusEnum::Success->value,
-            tags: [
-                $eventName,
-            ],
-            data: $data,
-        );
+    protected function preparePayload(array $payload): array
+    {
+        return [];
     }
 
     protected function formatListeners(string $eventName): array

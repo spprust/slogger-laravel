@@ -9,6 +9,7 @@ use SLoggerLaravel\Dispatcher\SLoggerTraceDispatcherInterface;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
 use SLoggerLaravel\Helpers\SLoggerMetricsHelper;
+use SLoggerLaravel\Helpers\SLoggerTraceDataComplementer;
 use SLoggerLaravel\Helpers\SLoggerTraceHelper;
 use SLoggerLaravel\Objects\SLoggerTraceObject;
 use SLoggerLaravel\Objects\SLoggerTraceUpdateObject;
@@ -27,7 +28,8 @@ class SLoggerProcessor
     public function __construct(
         private readonly SLoggerTraceDispatcherInterface $traceDispatcher,
         private readonly SLoggerTraceIdContainer $traceIdContainer,
-        private readonly AbstractSLoggerProfiling $profiling
+        private readonly AbstractSLoggerProfiling $profiler,
+        private readonly SLoggerTraceDataComplementer $traceDataComplementer
     ) {
     }
 
@@ -76,7 +78,7 @@ class SLoggerProcessor
         ?Carbon $loggedAt = null,
         ?string $customParentTraceId = null,
     ): mixed {
-        $this->profiling->start();
+        $this->profiler->start();
 
         $traceId = $this->startAndGetTraceId(
             type: $type,
@@ -120,13 +122,13 @@ class SLoggerProcessor
         ?Carbon $loggedAt = null,
         ?string $customParentTraceId = null
     ): string {
-        $this->profiling->start();
+        $this->profiler->start();
 
         $traceId = SLoggerTraceHelper::makeTraceId();
 
         $parentTraceId = $this->traceIdContainer->getParentTraceId();
 
-        SLoggerTraceHelper::injectTraceToData($data);
+        $this->traceDataComplementer->inject($data);
 
         $this->traceDispatcher->push(
             new SLoggerTraceObject(
@@ -174,7 +176,7 @@ class SLoggerProcessor
             throw new LogicException("Parent trace id has not found for $type.");
         }
 
-        SLoggerTraceHelper::injectTraceToData($data);
+        $this->traceDataComplementer->inject($data);
 
         $this->traceDispatcher->push(
             new SLoggerTraceObject(
@@ -223,12 +225,12 @@ class SLoggerProcessor
             $this->traceIdContainer->setParentTraceId(null);
         }
 
-        SLoggerTraceHelper::injectTraceToData($data);
+        $this->traceDataComplementer->inject($data);
 
         $parameters = new SLoggerTraceUpdateObject(
             traceId: $traceId,
             status: $status,
-            profiling: $this->profiling->stop(),
+            profiling: $this->profiler->stop(),
             tags: $tags,
             data: $data,
             duration: $duration,

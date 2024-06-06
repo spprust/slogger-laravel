@@ -26,6 +26,10 @@ class SLoggerTraceDataComplementer
                 continue;
             }
 
+            if (($frame['class'] ?? null) === static::class) {
+                continue;
+            }
+
             if (Str::startsWith($frame['file'], $this->basePathVendor)
                 || Str::startsWith($frame['file'], $this->basePathPackages)
             ) {

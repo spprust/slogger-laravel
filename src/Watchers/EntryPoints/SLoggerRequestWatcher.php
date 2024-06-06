@@ -56,15 +56,23 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         $parentTraceId = $event->parentTraceId;
 
+        $bootTime = defined('LARAVEL_START')
+            ? SLoggerTraceHelper::roundDuration((microtime(true) - LARAVEL_START))
+            : -1;
+
         $traceId = $this->processor->startAndGetTraceId(
             type: SLoggerTraceTypeEnum::Request->value,
             tags: $this->getPreTags($event->request),
-            data: $this->getCommonRequestData($event->request),
+            data: [
+                $this->getCommonRequestData($event->request),
+                ...['boot_time' => $bootTime],
+            ],
             customParentTraceId: $parentTraceId
         );
 
         $this->requests[] = [
-            'trace_id' => $traceId,
+            'trace_id'  => $traceId,
+            'boot_time' => $bootTime,
         ];
     }
 
@@ -94,11 +102,12 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         $data = [
             ...$this->getCommonRequestData($request),
-            'request'  => [
+            'boot_time' => $requestData['boot_time'],
+            'request'   => [
                 'headers'    => $this->prepareRequestHeaders($request),
                 'parameters' => $this->prepareRequestParameters($request),
             ],
-            'response' => [
+            'response'  => [
                 'status'  => $response->getStatusCode(),
                 'headers' => $this->prepareResponseHeaders($request, $response),
                 'data'    => $this->prepareResponseData($request, $response),

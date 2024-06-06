@@ -26,7 +26,9 @@ class SLoggerTraceDataComplementer
                 continue;
             }
 
-            if (($frame['class'] ?? null) === static::class) {
+            $class = $frame['class'] ?? null;
+
+            if ($class && ($class === self::class || $class === static::class)) {
                 continue;
             }
 

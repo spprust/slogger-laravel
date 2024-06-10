@@ -64,7 +64,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
             type: SLoggerTraceTypeEnum::Request->value,
             tags: $this->getPreTags($event->request),
             data: [
-                $this->getCommonRequestData($event->request),
+                ...$this->getCommonRequestData($event->request),
                 ...['boot_time' => $bootTime],
             ],
             customParentTraceId: $parentTraceId

@@ -141,8 +141,10 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
     protected function getPreTags(Request $request): array
     {
+        $url = str_replace($request->root(), '', $request->fullUrl());
+
         return [
-            $this->prepareUrl($request->getPathInfo()),
+            $this->prepareUrl($url),
         ];
     }
 

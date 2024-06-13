@@ -67,7 +67,7 @@ new \GuzzleHttp\Client([
             ->add(
                 new SLoggerRequestDataFormatter(
                     urlPatterns: [
-                        '/api/auth/*',
+                        'api/auth/*',
                         '*sensitive/some/*',
                     ],
                     hideAllResponseData: true

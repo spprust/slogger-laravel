@@ -225,7 +225,9 @@ class SLoggerProcessor
             $this->traceIdContainer->setParentTraceId(null);
         }
 
-        $this->traceDataComplementer->inject($data);
+        if (!is_null($data)) {
+            $this->traceDataComplementer->inject($data);
+        }
 
         $parameters = new SLoggerTraceUpdateObject(
             traceId: $traceId,

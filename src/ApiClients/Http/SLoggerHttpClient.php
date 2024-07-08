@@ -1,14 +1,15 @@
 <?php
 
-namespace SLoggerLaravel\HttpClient;
+namespace SLoggerLaravel\ApiClients\Http;
 
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
+use SLoggerLaravel\ApiClients\SLoggerApiClientInterface;
 use SLoggerLaravel\Objects\SLoggerTraceObjects;
 use SLoggerLaravel\Objects\SLoggerTraceUpdateObjects;
 use SLoggerLaravel\Profiling\Dto\SLoggerProfilingObjects;
 
-class SLoggerHttpClient
+class SLoggerHttpClient implements SLoggerApiClientInterface
 {
     public function __construct(protected ClientInterface $client)
     {

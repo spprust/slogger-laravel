@@ -8,7 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
-use SLoggerLaravel\HttpClient\SLoggerHttpClient;
+use SLoggerLaravel\ApiClients\SLoggerApiClientInterface;
 use SLoggerLaravel\SLoggerProcessor;
 use Throwable;
 
@@ -16,7 +16,7 @@ abstract class AbstractSLoggerTraceJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
-    abstract protected function onHandle(SLoggerHttpClient $loggerHttpClient): void;
+    abstract protected function onHandle(SLoggerApiClientInterface $loggerHttpClient): void;
 
     public int $tries = 60;
 
@@ -32,7 +32,7 @@ abstract class AbstractSLoggerTraceJob implements ShouldQueue
      * @throws GuzzleException
      * @throws Throwable
      */
-    public function handle(SLoggerProcessor $loggerProcessor, SLoggerHttpClient $loggerHttpClient): void
+    public function handle(SLoggerProcessor $loggerProcessor, SLoggerApiClientInterface $loggerHttpClient): void
     {
         $loggerProcessor->handleWithoutTracing(
             function () use ($loggerHttpClient) {

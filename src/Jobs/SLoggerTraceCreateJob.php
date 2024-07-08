@@ -2,8 +2,7 @@
 
 namespace SLoggerLaravel\Jobs;
 
-use GuzzleHttp\Exception\GuzzleException;
-use SLoggerLaravel\HttpClient\SLoggerHttpClient;
+use SLoggerLaravel\ApiClients\SLoggerApiClientInterface;
 use SLoggerLaravel\Objects\SLoggerTraceObjects;
 
 class SLoggerTraceCreateJob extends AbstractSLoggerTraceJob
@@ -14,10 +13,7 @@ class SLoggerTraceCreateJob extends AbstractSLoggerTraceJob
         parent::__construct();
     }
 
-    /**
-     * @throws GuzzleException
-     */
-    protected function onHandle(SLoggerHttpClient $loggerHttpClient): void
+    protected function onHandle(SLoggerApiClientInterface $loggerHttpClient): void
     {
         $loggerHttpClient->sendTraces(
             SLoggerTraceObjects::fromJson($this->traceObjectsJson)

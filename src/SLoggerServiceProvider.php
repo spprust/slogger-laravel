@@ -2,11 +2,11 @@
 
 namespace SLoggerLaravel;
 
-use GuzzleHttp\Client;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
+use SLoggerLaravel\ApiClients\SLoggerApiClientFactory;
+use SLoggerLaravel\ApiClients\SLoggerApiClientInterface;
 use SLoggerLaravel\Dispatcher\SLoggerTraceDispatcherInterface;
-use SLoggerLaravel\HttpClient\SLoggerHttpClient;
 use SLoggerLaravel\Middleware\SLoggerHttpMiddleware;
 use SLoggerLaravel\Profiling\AbstractSLoggerProfiling;
 use SLoggerLaravel\Profiling\SLoggerXHProfProfiler;
@@ -28,22 +28,9 @@ class SLoggerServiceProvider extends ServiceProvider
         );
         $this->app->singleton(AbstractSLoggerProfiling::class, SLoggerXHProfProfiler::class);
 
-        $this->app->singleton(SLoggerHttpClient::class, function (Application $app) {
-            $config = $app['config']['slogger.http_client'];
-
-            $url   = $config['url'];
-            $token = $config['token'];
-
-            return new SLoggerHttpClient(
-                new Client([
-                    'headers'  => [
-                        'Authorization'    => "Bearer $token",
-                        'X-Requested-With' => 'XMLHttpRequest',
-                        'Content-Type'     => 'application/json',
-                        'Accept'           => 'application/json',
-                    ],
-                    'base_uri' => $url,
-                ])
+        $this->app->singleton(SLoggerApiClientInterface::class, function (Application $app) {
+            return $app->make(SLoggerApiClientFactory::class)->create(
+                $app['config']['slogger.api_clients.default']
             );
         });
 

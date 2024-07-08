@@ -1,5 +1,4 @@
-
-# SLogger for laravel 
+# SLogger for laravel
 
 ## Installation
 
@@ -14,9 +13,15 @@ php artisan vendor:publish --tag=slogger-laravel
 ```dotenv
 # slogger
 SLOGGER_ENABLED=true
-SLOGGER_REQUESTS_HEADER_PARENT_TRACE_ID_KEY=x-parent-trace-id
+
+# slogger.api-clients
+# http, grpc (required slogger/grpc)
+SLOGGER_API_CLIENT=http
 SLOGGER_HTTP_CLIENT_URL=
 SLOGGER_HTTP_CLIENT_TOKEN=
+SLOGGER_GRPC_CLIENT_URL=
+SLOGGER_GRPC_CLIENT_TOKEN=
+SLOGGER_REQUESTS_HEADER_PARENT_TRACE_ID_KEY=x-parent-trace-id
 
 ## slogger.queues
 SLOGGER_QUEUE_TRACES_PUSHING_CONNECTION=${QUEUE_CONNECTION}

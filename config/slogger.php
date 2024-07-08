@@ -24,16 +24,23 @@ use SLoggerLaravel\Watchers\Services\SLoggerScheduleWatcher;
 return [
     'enabled' => env('SLOGGER_ENABLED', false),
 
-    'http_client' => [
-        'url'   => env('SLOGGER_HTTP_CLIENT_URL'),
-        'token' => env('SLOGGER_HTTP_CLIENT_TOKEN'),
+    'api_clients' => [
+        'default' => env('SLOGGER_API_CLIENT', 'http'),
+
+        'http' => [
+            'url'   => env('SLOGGER_HTTP_CLIENT_URL'),
+            'token' => env('SLOGGER_HTTP_CLIENT_TOKEN'),
+        ],
+
+        'grpc' => [
+            'url'   => env('SLOGGER_GRPC_CLIENT_URL'),
+            'token' => env('SLOGGER_GRPC_CLIENT_TOKEN'),
+        ],
     ],
 
+
     'profiling'  => [
-        'enabled'    => env('SLOGGER_PROFILING_ENABLED', false),
-        'namespaces' => [
-            'App\*',
-        ],
+        'enabled' => env('SLOGGER_PROFILING_ENABLED', false),
     ],
 
     /** @see SLoggerTraceDispatcherInterface */

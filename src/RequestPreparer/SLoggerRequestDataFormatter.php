@@ -131,4 +131,14 @@ class SLoggerRequestDataFormatter
             ->map(fn($header) => implode(', ', (array) $header))
             ->all();
     }
+
+    public function isHideAllRequestParameters(): bool
+    {
+        return $this->hideAllRequestParameters;
+    }
+
+    public function isHideAllResponseData(): bool
+    {
+        return $this->hideAllResponseData;
+    }
 }

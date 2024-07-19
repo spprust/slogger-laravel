@@ -65,7 +65,12 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
             tags: $this->getPreTags($event->request),
             data: [
                 ...$this->getCommonRequestData($event->request),
-                ...['boot_time' => $bootTime],
+                'boot_time' => $bootTime,
+                'request'   => [
+                    'headers'    => $this->prepareRequestHeaders($event->request),
+                    'parameters' => $this->prepareRequestParameters($event->request),
+                ],
+
             ],
             customParentTraceId: $parentTraceId
         );

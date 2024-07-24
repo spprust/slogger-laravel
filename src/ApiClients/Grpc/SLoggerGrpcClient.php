@@ -40,7 +40,7 @@ readonly class SLoggerGrpcClient implements SLoggerApiClientInterface
 
         foreach ($traceObjects->get() as $item) {
             $loggedAt = new Timestamp();
-            $loggedAt->fromDateTime(now('UTC'));
+            $loggedAt->fromDateTime($item->loggedAt->toDateTime());
 
             $objects[] = (new TraceCreateObject())
                 ->setTraceId($item->traceId)
@@ -161,41 +161,51 @@ readonly class SLoggerGrpcClient implements SLoggerApiClientInterface
                         ->setName('wait (us)')
                         ->setValue(
                             (new TraceProfilingItemDataItemValueObject())
-                            ->setInt(new Int32Value([
-                                'value' => $item->data->waitTimeInUs
-                            ]))
+                                ->setInt(
+                                    new Int32Value([
+                                        'value' => $item->data->waitTimeInUs,
+                                    ])
+                                )
                         ),
                     (new TraceProfilingItemDataItemObject())
                         ->setName('calls')
                         ->setValue(
                             (new TraceProfilingItemDataItemValueObject())
-                            ->setDouble(new DoubleValue([
-                                'value' => $item->data->numberOfCalls
-                            ]))
+                                ->setDouble(
+                                    new DoubleValue([
+                                        'value' => $item->data->numberOfCalls,
+                                    ])
+                                )
                         ),
                     (new TraceProfilingItemDataItemObject())
                         ->setName('cpu')
                         ->setValue(
                             (new TraceProfilingItemDataItemValueObject())
-                            ->setDouble(new DoubleValue([
-                                'value' => $item->data->cpuTime
-                            ]))
+                                ->setDouble(
+                                    new DoubleValue([
+                                        'value' => $item->data->cpuTime,
+                                    ])
+                                )
                         ),
                     (new TraceProfilingItemDataItemObject())
                         ->setName('mem (b)')
                         ->setValue(
                             (new TraceProfilingItemDataItemValueObject())
-                            ->setDouble(new DoubleValue([
-                                'value' => $item->data->memoryUsageInBytes
-                            ]))
+                                ->setDouble(
+                                    new DoubleValue([
+                                        'value' => $item->data->memoryUsageInBytes,
+                                    ])
+                                )
                         ),
                     (new TraceProfilingItemDataItemObject())
                         ->setName('mem peak (b)')
                         ->setValue(
                             (new TraceProfilingItemDataItemValueObject())
-                            ->setDouble(new DoubleValue([
-                                'value' => $item->data->peakMemoryUsageInBytes
-                            ]))
+                                ->setDouble(
+                                    new DoubleValue([
+                                        'value' => $item->data->peakMemoryUsageInBytes,
+                                    ])
+                                )
                         ),
                 ]);
         }

@@ -6,6 +6,7 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as IlluminateResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
@@ -70,7 +71,6 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
                     'headers'    => $this->prepareRequestHeaders($event->request),
                     'parameters' => $this->prepareRequestParameters($event->request),
                 ],
-
             ],
             customParentTraceId: $parentTraceId
         );
@@ -100,7 +100,6 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
 
         $traceId = $requestData['trace_id'];
 
-        $startedAt = $this->app[Kernel::class]->requestStartedAt();
 
         $request  = $event->request;
         $response = $event->response;
@@ -119,6 +118,12 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
             ],
             ...$this->getAdditionalData(),
         ];
+
+        if (defined('LARAVEL_START')) {
+            $startedAt = new Carbon(LARAVEL_START, 'UTC');
+        } else {
+            $startedAt = $this->app[Kernel::class]->requestStartedAt();
+        }
 
         $this->processor->stop(
             traceId: $traceId,

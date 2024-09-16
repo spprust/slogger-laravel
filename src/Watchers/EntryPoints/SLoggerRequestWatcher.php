@@ -120,7 +120,7 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         ];
 
         if (defined('LARAVEL_START')) {
-            $startedAt = new Carbon(LARAVEL_START, 'UTC');
+            $startedAt = new Carbon(LARAVEL_START);
         } else {
             $startedAt = $this->app[Kernel::class]->requestStartedAt();
         }

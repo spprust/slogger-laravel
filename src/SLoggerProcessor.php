@@ -3,6 +3,7 @@
 namespace SLoggerLaravel;
 
 use Closure;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Carbon;
 use LogicException;
 use SLoggerLaravel\Dispatcher\SLoggerTraceDispatcherInterface;
@@ -26,6 +27,7 @@ class SLoggerProcessor
     private bool $paused = false;
 
     public function __construct(
+        private readonly Application $app,
         private readonly SLoggerTraceDispatcherInterface $traceDispatcher,
         private readonly SLoggerTraceIdContainer $traceIdContainer,
         private readonly AbstractSLoggerProfiling $profiler,
@@ -83,6 +85,7 @@ class SLoggerProcessor
         $traceId = $this->startAndGetTraceId(
             type: $type,
             tags: $tags,
+            data: $data,
             loggedAt: $loggedAt,
             customParentTraceId: $customParentTraceId,
         );
@@ -91,12 +94,16 @@ class SLoggerProcessor
 
         $exception = null;
 
+        $dataChanged = false;
+
         try {
-            $result = $callback();
+            $result = $this->app->call($callback);
         } catch (Throwable $exception) {
             $result = null;
 
             $data['exception'] = SLoggerDataFormatter::exception($exception);
+
+            $dataChanged = true;
         }
 
         $this->stop(
@@ -104,7 +111,7 @@ class SLoggerProcessor
             status: $exception
                 ? SLoggerTraceStatusEnum::Failed->value
                 : SLoggerTraceStatusEnum::Success->value,
-            data: $data,
+            data: $dataChanged ? $data : null,
             duration: SLoggerTraceHelper::calcDuration($startedAt)
         );
 

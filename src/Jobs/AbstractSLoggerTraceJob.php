@@ -34,20 +34,26 @@ abstract class AbstractSLoggerTraceJob implements ShouldQueue
      */
     public function handle(SLoggerProcessor $loggerProcessor, SLoggerApiClientInterface $loggerHttpClient): void
     {
-        $loggerProcessor->handleWithoutTracing(
-            function () use ($loggerHttpClient) {
-                try {
+        try {
+            $loggerProcessor->handleWithoutTracing(
+                function () use ($loggerHttpClient) {
                     $this->onHandle($loggerHttpClient);
-                } catch (Throwable $exception) {
-                    Log::channel(config('slogger.log_channel'))
-                        ->error($exception->getMessage(), [
-                            'code'  => $exception->getCode(),
-                            'file'  => $exception->getFile(),
-                            'line'  => $exception->getLine(),
-                            'trace' => $exception->getTraceAsString(),
-                        ]);
                 }
+            );
+        } catch (Throwable $exception) {
+            if ($this->job->attempts() < $this->tries) {
+                $this->job->release($this->backoff);
+            } else {
+                $this->job->delete();
+
+                Log::channel(config('slogger.log_channel'))
+                    ->error($exception->getMessage(), [
+                        'code'  => $exception->getCode(),
+                        'file'  => $exception->getFile(),
+                        'line'  => $exception->getLine(),
+                        'trace' => $exception->getTraceAsString(),
+                    ]);
             }
-        );
+        }
     }
 }

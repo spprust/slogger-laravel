@@ -20,7 +20,7 @@ abstract class AbstractSLoggerTraceJob implements ShouldQueue
 
     public int $tries = 60;
 
-    public int $timeout = 5;
+    public int $backoff = 3;
 
     public function __construct()
     {

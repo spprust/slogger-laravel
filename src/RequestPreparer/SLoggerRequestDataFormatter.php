@@ -3,12 +3,18 @@
 namespace SLoggerLaravel\RequestPreparer;
 
 use Illuminate\Support\Str;
+use SLoggerLaravel\DataResolver;
 use SLoggerLaravel\Helpers\SLoggerMaskHelper;
 
 class SLoggerRequestDataFormatter
 {
+    protected array $urlPatterns;
+
+    /**
+     * @param string[] $urlPatterns
+     */
     public function __construct(
-        protected array $urlPatterns,
+        array $urlPatterns,
         protected bool $hideAllRequestParameters = false,
         protected array $requestHeaders = [],
         protected array $requestParameters = [],
@@ -16,6 +22,10 @@ class SLoggerRequestDataFormatter
         protected array $responseHeaders = [],
         protected array $responseFields = [],
     ) {
+        $this->urlPatterns = array_map(
+            fn(string $urlPattern) => mb_trim($urlPattern, '/'),
+            $urlPatterns
+        );
     }
 
     public function setHideAllRequestParameters(bool $hideAllRequestParameters): static
@@ -102,27 +112,38 @@ class SLoggerRequestDataFormatter
         );
     }
 
-    public function prepareResponseData(string $url, array $data): array
+    public function prepareResponseData(string $url, DataResolver $dataResolver): bool
     {
         if (!$this->is($url)) {
-            return $data;
+            return true;
         }
 
         if ($this->hideAllResponseData) {
-            return [
+            $dataResolver->setData([
                 '__cleaned' => null,
-            ];
+            ]);
+
+            return false;
         }
 
-        return SLoggerMaskHelper::maskArrayByPatterns(
-            data: $data,
-            patterns: $this->responseFields
+        $dataResolver->setData(
+            SLoggerMaskHelper::maskArrayByPatterns(
+                data: $dataResolver->getData(),
+                patterns: $this->responseFields
+            )
         );
+
+        return true;
+    }
+
+    public function isHideAllResponseData(): bool
+    {
+        return $this->hideAllResponseData;
     }
 
     protected function is(string $url): bool
     {
-        return Str::is($this->urlPatterns, $url);
+        return Str::is($this->urlPatterns, mb_trim($url, '/'));
     }
 
     protected function prepareHeaders(array $headers): array
@@ -135,10 +156,5 @@ class SLoggerRequestDataFormatter
     public function isHideAllRequestParameters(): bool
     {
         return $this->hideAllRequestParameters;
-    }
-
-    public function isHideAllResponseData(): bool
-    {
-        return $this->hideAllResponseData;
     }
 }

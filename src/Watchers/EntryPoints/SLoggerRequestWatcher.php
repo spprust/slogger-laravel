@@ -9,6 +9,7 @@ use Illuminate\Http\Response as IlluminateResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use SLoggerLaravel\DataResolver;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Enums\SLoggerTraceTypeEnum;
 use SLoggerLaravel\Events\SLoggerRequestHandling;
@@ -236,23 +237,27 @@ class SLoggerRequestWatcher extends AbstractSLoggerWatcher
         }
 
         if ($request->acceptsJson()) {
-            $uri = $this->getRequestPath($request);
+            $url = $this->getRequestPath($request);
 
-            $data = $this->getResponseContentData($request, $response);
+            $dataResolver = new DataResolver(
+                fn() => json_decode($response->getContent(), true) ?: []
+            );
 
-            foreach ($this->formatters->getItems() as $masker) {
-                $data = $masker->prepareResponseData($uri, $data);
+            foreach ($this->formatters->getItems() as $formatter) {
+                $continue = $formatter->prepareResponseData(
+                    url: $url,
+                    dataResolver: $dataResolver
+                );
+
+                if (!$continue) {
+                    break;
+                }
             }
 
-            return $data;
+            return $dataResolver->getData();
         }
 
         return [];
-    }
-
-    protected function getResponseContentData(Request $request, Response $response): array
-    {
-        return json_decode($response->getContent(), true) ?: [];
     }
 
     protected function isRequestByPatterns(Request $request, array $patterns): bool

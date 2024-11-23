@@ -6,6 +6,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use SLoggerLaravel\DataResolver;
 use SLoggerLaravel\Enums\SLoggerTraceStatusEnum;
 use SLoggerLaravel\Guzzle\SLoggerGuzzleHandlerFactory;
 use SLoggerLaravel\Helpers\SLoggerDataFormatter;
@@ -260,20 +261,28 @@ class SLoggerHttpClientWatcher extends AbstractSLoggerWatcher
 
         $body->rewind();
 
-        $content = json_decode($body->getContents(), true) ?: [];
+        $url = $this->getRequestPath($request);
+
+        $dataResolver = new DataResolver(
+            fn() => json_decode($body->getContents(), true) ?: []
+        );
+
+        foreach ($formatters->getItems() ?? [] as $formatter) {
+            $continue = $formatter->prepareResponseData(
+                url: $url,
+                dataResolver: $dataResolver
+            );
+
+            if (!$continue) {
+                break;
+            }
+        }
+
+        $data = $dataResolver->getData();
 
         $body->rewind();
 
-        $url = $this->getRequestPath($request);
-
-        foreach ($formatters?->getItems() ?? [] as $formatter) {
-            $content = $formatter->prepareResponseData(
-                url: $url,
-                data: $content
-            );
-        }
-
-        return $content;
+        return $data;
     }
 
     protected function getCommonRequestData(RequestInterface $request): array

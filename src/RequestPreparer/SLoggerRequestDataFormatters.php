@@ -18,13 +18,16 @@ class SLoggerRequestDataFormatters
         return $this;
     }
 
+    /**
+     * @return SLoggerRequestDataFormatter[]
+     */
     public function getItems(): array
     {
         if (!$this->sorted) {
             $this->items = collect($this->items)
                 ->sortBy(
                     static function (SLoggerRequestDataFormatter $item) {
-                        return $item->isHideAllRequestParameters() || $item->isHideAllResponseData() ? 0 : 1;
+                        return ($item->isHideAllRequestParameters() || $item->isHideAllResponseData()) ? 0 : 1;
                     }
                 )
                 ->all();

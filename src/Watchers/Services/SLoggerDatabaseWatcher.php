@@ -27,7 +27,7 @@ class SLoggerDatabaseWatcher extends AbstractSLoggerWatcher
         $data = [
             'connection' => $event->connectionName,
             'bindings'   => $this->maskValue($event->bindings),
-            'sql'        => $event->sql,
+            'sql'        => Str::substr($event->sql, 0, 10000),
         ];
 
         $this->processor->push(

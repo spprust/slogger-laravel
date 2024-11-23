@@ -23,7 +23,7 @@ class SLoggerRequestDataFormatter
         protected array $responseFields = [],
     ) {
         $this->urlPatterns = array_map(
-            fn(string $urlPattern) => mb_trim($urlPattern, '/'),
+            fn(string $urlPattern) => trim($urlPattern, '/'),
             $urlPatterns
         );
     }
@@ -143,7 +143,7 @@ class SLoggerRequestDataFormatter
 
     protected function is(string $url): bool
     {
-        return Str::is($this->urlPatterns, mb_trim($url, '/'));
+        return Str::is($this->urlPatterns, trim($url, '/'));
     }
 
     protected function prepareHeaders(array $headers): array

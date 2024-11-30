@@ -3,8 +3,8 @@
 namespace SLoggerLaravel\Watchers;
 
 use Closure;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Events\Dispatcher;
 use SLoggerLaravel\Dispatcher\SLoggerTraceDispatcherInterface;
 use SLoggerLaravel\Events\SLoggerWatcherErrorEvent;
 use SLoggerLaravel\SLoggerConfig;

@@ -6,16 +6,22 @@ use Closure;
 
 class DataResolver
 {
+    /**
+     * @var array<string, mixed>|null $data
+     */
     private ?array $data = null;
 
     /**
-     * @param Closure(): array $resolver
+     * @param Closure(): array<string, mixed> $resolver
      */
     public function __construct(
         private readonly Closure $resolver
     ) {
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getData(): array
     {
         return is_null($this->data)
@@ -23,11 +29,17 @@ class DataResolver
             : $this->data;
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function setData(array $data): void
     {
         $this->data = $data;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function resolve(): array
     {
         $resolver = $this->resolver;
